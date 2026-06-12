@@ -60,7 +60,7 @@ function nextLevel() {
 }
 
 // ── XP ───────────────────────────────────────────────────────────────────────
-const XP_LESSON = 5, XP_QUIZ = 25, XP_MODULE = 100;
+const XP_LESSON = 5, XP_QUIZ = 25, XP_INPUT = 35, XP_MODULE = 100;
 
 function gainXp(n, label) {
   const before = currentLevel();
@@ -176,7 +176,7 @@ function onFeedScroll() {
     // XP lettura per card non-quiz mai viste
     const c = curMod.cards[i];
     const key = curMod.id + ':' + i;
-    if (c && c.type !== 'quiz' && !state.seen[key]) {
+    if (c && c.type !== 'quiz' && c.type !== 'input' && !state.seen[key]) {
       state.seen[key] = true;
       gainXp(XP_LESSON, '📖');
     }
@@ -247,7 +247,55 @@ function buildCard(mod, c, i) {
       box.appendChild(b);
     });
   }
+  else if (c.type === 'input') {
+    el.innerHTML = `${kicker}
+      <div class="card-emoji">⌨️</div>
+      <div><span class="input-label">✍️ RISPOSTA SCRITTA · +${XP_INPUT} XP</span></div>
+      <div class="card-title">${c.q}</div>
+      <div class="input-row">
+        <input class="quiz-input" type="text" placeholder="${c.placeholder || 'scrivi qui...'}"
+          autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">
+        <button class="btn-check">✓</button>
+      </div>
+      <div class="quiz-zone"></div>`;
+    const inp = el.querySelector('.quiz-input');
+    const btn = el.querySelector('.btn-check');
+    const zone = el.querySelector('.quiz-zone');
+    const submit = () => answerInput(mod, c, i, inp, btn, zone);
+    btn.onclick = submit;
+    inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
+  }
   return el;
+}
+
+// normalizzazione risposte scritte: trim, minuscole, spazi multipli → uno
+const normAnswer = s => s.trim().toLowerCase().replace(/\s+/g, ' ');
+
+function answerInput(mod, c, cardIdx, inp, btn, zone) {
+  const given = normAnswer(inp.value);
+  if (!given) { inp.focus(); return; }
+  const ok = c.accept.some(a => normAnswer(a) === given);
+  inp.disabled = true;
+  btn.disabled = true;
+  inp.classList.add(ok ? 'correct' : 'wrong');
+
+  const prog = state.modules[mod.id];
+  const key = mod.id + ':' + cardIdx;
+  if (!state.seen[key]) {
+    state.seen[key] = true;
+    prog.quizTot++;
+    if (ok) {
+      prog.quizOk++;
+      gainXp(XP_INPUT, '⌨️');
+      confetti(60);
+    }
+    saveState();
+  }
+
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    ${ok ? '' : `<div class="input-answer">La risposta era: <code>${c.accept[0]}</code></div>`}
+    <div class="quiz-explain">${c.explain}</div>`;
 }
 
 function answerQuiz(mod, c, cardIdx, chosen, box, zone) {

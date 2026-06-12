@@ -16,11 +16,10 @@ e note su Debian/Red Hat dove l'esame le richiede.
 Apri `index.html` nel browser. Fine. Niente server, niente build, niente dipendenze.
 
 ### Dal telefono (senza PC acceso!) 📱
-Quando il progetto sarà migrato nel suo repo dedicato (vedi in fondo):
-1. Il repo deve essere **PUBBLICO** (GitHub Pages gratis non funziona sui privati)
-2. Su GitHub: **Settings → Pages → Deploy from branch → main → / (root)** → Save
-3. Dopo ~1 minuto l'app è live su `https://loremona.github.io/linux-quiz-master/`
-4. Dal telefono: menu del browser → **"Aggiungi a schermata Home"**
+Il progetto vive ormai nel suo repo dedicato **`loremona/linux-quiz-master`** (pubblico).
+1. Su GitHub (una tantum): **Settings → Pages → Deploy from branch → main → / (root)** → Save
+2. Dopo ~1 minuto l'app è live su `https://loremona.github.io/linux-quiz-master/`
+3. Dal telefono: menu del browser → **"Aggiungi a schermata Home"**
 
 I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 
@@ -32,7 +31,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 |---|---|---|
 | **CP0** | Motore app (feed, card, quiz, XP, livelli, streak, coriandoli, salvataggio) + **Modulo 1** | ✅ Fatto |
 | **CP1** | **Modulo 2** | ✅ Fatto |
-| **CP2** | **Modulo 3** + upgrade motore: quiz a risposta scritta (tipo `input`) | ⬜ |
+| **CP2** | **Modulo 3** + upgrade motore: quiz a risposta scritta (tipo `input`) | ✅ Fatto |
 | **CP3** | **Modulo 4** + upgrade motore: card "🎯 Missione" | ⬜ |
 | **CP4** | **Modulo 5** + upgrade motore: mazzo "Ripasso errori 🔁" in home | ⬜ |
 | **CP5** | **Modulo 6** (corto!) + retrofit: missioni e quiz `input` nei Moduli 1–2 | ⬜ |
@@ -42,7 +41,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | **CP9** | **Modulo 10** | ⬜ |
 | **CP10** | Simulatore Esame 101 + Esame 102 (60 domande, timer, punteggio LPI 200–800, soglia 500) | ⬜ |
 | **CP11** | Cheatsheet per modulo + PWA offline (manifest + service worker) | ⬜ |
-| **CP12** | Migrazione in repo dedicato `linux-quiz-master` + GitHub Pages | ⬜ |
+| **CP12** | Migrazione in repo dedicato `linux-quiz-master` + GitHub Pages | ✅ Fatto (anticipato) |
 
 ### I 10 moduli (= programma d'esame LPIC-1 completo)
 
@@ -50,7 +49,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 |---|--------|----------------------|-------|
 | 1 | 🧠 Com'è fatto Linux | 101.1, 101.2, 101.3 | ✅ 33 card, 12 quiz |
 | 2 | 📦 Pacchetti & installazione | 102.1–102.6 (+ pacman/AUR extra) | ✅ 29 card, 11 quiz |
-| 3 | ⌨️ Comandi GNU & Unix | 103.1–103.8 (cd/ls/cp, pipe, redirect, grep, regex, sort/cut/wc/tr, ps/kill/nice, vi) | ⬜ |
+| 3 | ⌨️ Comandi GNU & Unix | 103.1–103.8 (cd/ls/cp, pipe, redirect, grep, regex, sort/cut/wc/tr, ps/kill/nice, vi) | ✅ 35 card, 15 quiz (di cui 4 `input`) |
 | 4 | 💾 Dischi & filesystem | 104.1–104.7 (mkfs, fsck, mount/umount, df/du, permessi, chmod/chown, link, FHS, find/locate) | ⬜ |
 | 5 | 🐚 Shell & scripting | 105.1, 105.2 (variabili, PATH, alias, .bashrc, script, if/for/while, test) | ⬜ |
 | 6 | 🖥️ Interfacce grafiche | 106.1–106.3 (X11, Wayland, display manager, accessibilità) — modulo CORTO, ~15 card | ⬜ |
@@ -64,15 +63,15 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 ## 📐 GUIDA PER CHI SVILUPPA (sessioni Claude future: leggi TUTTO prima di scrivere codice)
 
 ### Regole d'oro
-1. **Lavora SOLO dentro `linux-dojo/`** — il resto del repo è l'app AWS dell'utente: NON toccarla
-2. Branch di lavoro: quello indicato dalla sessione (finora `claude/aws-quiz-master-mobile-yqibg2`). **Niente merge su main**
+1. Il progetto vive nel repo dedicato **`loremona/linux-quiz-master`**: i file stanno nella ROOT del repo
+2. Branch di lavoro: **`main`** (commit + push diretti; l'app va live su GitHub Pages a ogni push)
 3. **Niente build tool, niente framework, niente npm**: vanilla HTML/CSS/JS, deve girare aprendo `index.html` da file e su GitHub Pages
 4. Fai UN checkpoint per volta, poi committa, pusha e aggiorna le tabelle di stato in questo README
-5. Prima di committare: `node --check` su ogni file JS toccato
+5. Prima di committare: `node --check` su ogni file JS toccato (se `node` manca sul sistema, vale un parse-check equivalente, es. `gjs` + `new Function(src)`)
 
 ### Architettura
 ```
-linux-dojo/
+(root del repo)
 ├── index.html        # SPA: home + feed. I moduli si caricano con <script> in fondo
 ├── css/style.css     # Tema scuro neon. Variabili CSS in :root
 ├── js/app.js         # Motore: stato/localStorage, XP/livelli, feed, builder card, confetti
@@ -85,7 +84,7 @@ linux-dojo/
 2. Aggiungi `<script src="js/data/moduleNN.js"></script>` in `index.html` (PRIMA di modules.js)
 3. Stop. `modules.js` lo aggancia da solo (controlla `typeof MODULENN !== 'undefined'`)
 
-### Schema delle card (4 tipi esistenti)
+### Schema delle card (5 tipi esistenti)
 ```js
 // LEZIONE — analogy è OBBLIGATORIA (tranne card di ripasso): è la firma del Dojo
 { type: 'lesson', emoji: '🧠', title: 'Titolo corto',
@@ -103,17 +102,17 @@ linux-dojo/
 { type: 'quiz', q: 'Domanda in stile esame LPIC-1?',
   opts: ['...', '...', '...', '...'], a: 1,
   explain: `Perché è giusta E perché le altre sono sbagliate. Chiudi con emoji.` },
+
+// QUIZ A RISPOSTA SCRITTA (fill-in-the-blank, come all'esame LPI) — da CP2
+// Confronto: trim + case-insensitive + spazi multipli collassati. Invio = verifica.
+// XP: +35. Sbagliato → mostra accept[0] come risposta. accept[0] = la forma "canonica".
+{ type: 'input', q: 'Quale comando carica un modulo kernel con le dipendenze?',
+  accept: ['modprobe', 'sudo modprobe'], placeholder: 'scrivi il comando...',
+  explain: `...` },
 ```
 
 ### Nuovi tipi da implementare (specifica concordata con l'utente)
 ```js
-// CP2 — QUIZ A RISPOSTA SCRITTA (fill-in-the-blank, come all'esame LPI)
-// <input> + bottone verifica; confronto case-insensitive, trim, accetta più risposte valide
-{ type: 'input', q: 'Quale comando carica un modulo kernel con le dipendenze?',
-  accept: ['modprobe', 'sudo modprobe'], placeholder: 'scrivi il comando...',
-  explain: `...` },
-// XP: +35 (più della scelta multipla, è più difficile). Sbagliato → mostra la risposta.
-
 // CP3 — MISSIONE (esercizio sul terminale VERO dell'utente, 2-3 a fine modulo)
 { type: 'mission', emoji: '🎯', title: 'Missione: chi comanda?',
   text: `Sul TUO CachyOS scopri quale target di avvio è impostato.`,
@@ -158,19 +157,11 @@ linux-dojo/
 
 ---
 
-## 📦 Migrazione in repo dedicato (CP12 — o quando l'utente vuole)
+## 📦 Migrazione in repo dedicato (CP12) — ✅ FATTA
 
-```bash
-# 1. Su github.com creare un repo PUBBLICO vuoto chiamato linux-quiz-master (senza README)
-# 2. Sul PC dell'utente:
-git clone https://github.com/loremona/aws-quiz-master.git
-cd aws-quiz-master && git checkout claude/aws-quiz-master-mobile-yqibg2
-cp -r linux-dojo /tmp/linux-quiz-master && cd /tmp/linux-quiz-master
-git init && git add -A && git commit -m "Linux Dojo: corso interattivo LPIC-1"
-git remote add origin https://github.com/loremona/linux-quiz-master.git
-git push -u origin main
-# 3. Settings → Pages → main → / (root) → l'app è sul telefono 📱
-```
+Il progetto è stato migrato da `aws-quiz-master` (branch `claude/aws-quiz-master-mobile-yqibg2`,
+cartella `linux-dojo/`) alla **root** di questo repo dedicato il 2026-06-12.
+Resta solo da attivare GitHub Pages (una tantum): **Settings → Pages → main → / (root)**.
 
 ---
 
@@ -178,6 +169,6 @@ git push -u origin main
 
 Apri una nuova sessione Claude su questo repo e scrivi:
 
-> **"Continua il Linux Dojo dal checkpoint successivo (leggi linux-dojo/README.md)"**
+> **"Continua il Linux Dojo dal checkpoint successivo (leggi il README.md nella root)"**
 
 La sessione troverà qui dentro tutto: stato, roadmap, schema delle card, stile e checklist.
