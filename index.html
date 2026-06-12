@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0b0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>🐧 Linux Dojo — LPIC-1</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐧</text></svg>">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ════════ HOME ════════ -->
+<div id="home" class="screen">
+  <header class="home-header">
+    <div class="logo">🐧 <span>LINUX</span> DOJO</div>
+    <div class="streak-pill" id="streakPill">🔥 0</div>
+  </header>
+
+  <div class="level-card">
+    <div class="level-emoji" id="levelEmoji">🥚</div>
+    <div class="level-info">
+      <div class="level-name" id="levelName">Pinguino Neonato</div>
+      <div class="xp-bar"><div class="xp-fill" id="xpFill"></div></div>
+      <div class="xp-text" id="xpText">0 XP</div>
+    </div>
+  </div>
+
+  <div class="daily-msg" id="dailyMsg"></div>
+
+  <h2 class="section-title">📚 I tuoi moduli</h2>
+  <div id="moduleList" class="module-list"></div>
+
+  <footer class="home-footer">LPIC-1 · made with 🧠 + ☕</footer>
+</div>
+
+<!-- ════════ FEED (le card stile TikTok) ════════ -->
+<div id="feed" class="screen hidden">
+  <div class="feed-topbar">
+    <button class="btn-icon" id="btnExit">✕</button>
+    <div class="feed-progress"><div class="feed-progress-fill" id="feedProgressFill"></div></div>
+    <div class="feed-xp" id="feedXp">⚡ 0</div>
+  </div>
+  <div id="cards" class="cards"></div>
+  <div class="swipe-hint" id="swipeHint">scorri in su per continuare ⬆️</div>
+</div>
+
+<!-- ════════ Coriandoli ════════ -->
+<canvas id="confetti"></canvas>
+
+<!-- ════════ Toast XP ════════ -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/data/module01.js"></script>
+<script src="js/data/module02.js"></script>
+<script src="js/modules.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

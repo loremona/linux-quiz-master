@@ -1,0 +1,349 @@
+/* ═══════════ LINUX DOJO — motore ═══════════ */
+'use strict';
+
+// ── Stato persistente ────────────────────────────────────────────────────────
+const STORE_KEY = 'linux-dojo-v1';
+
+const defaultState = () => ({
+  xp: 0,
+  streak: 0,
+  lastDay: null,
+  modules: {},   // id -> { card: ultimaCardVista, done: bool, quizOk: n, quizTot: n }
+  seen: {},      // "modId:cardIdx" -> true (XP già assegnata)
+});
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) return { ...defaultState(), ...JSON.parse(raw) };
+  } catch (e) { /* storage corrotto: si riparte */ }
+  return defaultState();
+}
+
+function saveState() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+}
+
+// ── Streak giornaliero ───────────────────────────────────────────────────────
+function touchStreak() {
+  const today = new Date().toISOString().slice(0, 10);
+  if (state.lastDay === today) return;
+  const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+  state.streak = (state.lastDay === yesterday) ? state.streak + 1 : 1;
+  state.lastDay = today;
+  saveState();
+}
+
+// ── Livelli ──────────────────────────────────────────────────────────────────
+const LEVELS = [
+  { xp: 0,    emoji: '🥚', name: 'Pinguino Neonato' },
+  { xp: 100,  emoji: '🐣', name: 'Pinguino Pulcino' },
+  { xp: 250,  emoji: '🐧', name: 'Pinguino di Strada' },
+  { xp: 500,  emoji: '🛹', name: 'Pinguino Skater' },
+  { xp: 800,  emoji: '🥷', name: 'Pinguino Ninja' },
+  { xp: 1200, emoji: '🧙', name: 'Mago del Terminale' },
+  { xp: 1700, emoji: '🦾', name: 'Cyborg di /dev' },
+  { xp: 2300, emoji: '🚀', name: 'Astro-Sysadmin' },
+  { xp: 3000, emoji: '👑', name: 'Tux Supremo' },
+];
+
+function currentLevel() {
+  let lvl = LEVELS[0];
+  for (const l of LEVELS) if (state.xp >= l.xp) lvl = l;
+  return lvl;
+}
+function nextLevel() {
+  for (const l of LEVELS) if (state.xp < l.xp) return l;
+  return null;
+}
+
+// ── XP ───────────────────────────────────────────────────────────────────────
+const XP_LESSON = 5, XP_QUIZ = 25, XP_MODULE = 100;
+
+function gainXp(n, label) {
+  const before = currentLevel();
+  state.xp += n;
+  saveState();
+  toast(`+${n} XP ${label || ''}`);
+  const after = currentLevel();
+  if (after !== before) {
+    setTimeout(() => { toast(`${after.emoji} LIVELLO SU: ${after.name}!`); confetti(120); }, 900);
+  }
+  renderFeedXp();
+}
+
+// ── Messaggi dopamina ────────────────────────────────────────────────────────
+const PRAISE = ['GRANDE! 🔥', 'BOOM! 💥', 'Sei una macchina! 🤖', 'Esatto! ⚡', 'Cervello galattico 🧠✨', 'Tux è fiero di te 🐧'];
+const ROAST  = ['Ahia! Ma ora lo sai 💪', 'Quasi! Leggi la spiegazione 👇', 'Capita ai migliori 🐒', 'Errore = imparare ×2 🧠'];
+const DAILY  = [
+  'Una card al giorno leva il sysadmin di torno. Anzi no, ti ci trasforma. 🐧',
+  'Il kernel non si impara da solo. Swipe! ⬆️',
+  'Oggi 10 minuti di Dojo = domani meno panico all\'esame. 🎯',
+  'Streak attiva = cervello attivo. Non spezzare la catena! 🔥',
+  'Ricorda: anche Linus Torvalds è partito da `ls`. 🚶',
+];
+const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+
+// ── DOM refs ─────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const homeEl = $('home'), feedEl = $('feed'), cardsEl = $('cards');
+
+// ── HOME ─────────────────────────────────────────────────────────────────────
+function renderHome() {
+  touchStreak();
+  const lvl = currentLevel(), nxt = nextLevel();
+  $('levelEmoji').textContent = lvl.emoji;
+  $('levelName').textContent = lvl.name;
+  $('xpText').textContent = nxt ? `${state.xp} XP — prossimo livello a ${nxt.xp}` : `${state.xp} XP — livello MASSIMO 👑`;
+  const base = lvl.xp, top = nxt ? nxt.xp : state.xp || 1;
+  $('xpFill').style.width = Math.min(100, ((state.xp - base) / (top - base)) * 100) + '%';
+  const pill = $('streakPill');
+  pill.textContent = `🔥 ${state.streak}`;
+  pill.classList.toggle('hot', state.streak >= 3);
+  $('dailyMsg').textContent = pick(DAILY);
+
+  const list = $('moduleList');
+  list.innerHTML = '';
+  MODULES.forEach((mod, i) => {
+    const prog = state.modules[mod.id] || {};
+    const tot = mod.cards.length;
+    const at = Math.min(prog.card || 0, tot);
+    const pct = prog.done ? 100 : Math.round(at / tot * 100);
+    const locked = !mod.cards.length;
+
+    const el = document.createElement('div');
+    el.className = 'module-card' + (prog.done ? ' done' : '') + (locked ? ' locked' : '');
+    el.innerHTML = `
+      <div class="module-icon">${mod.icon}</div>
+      <div class="module-meta">
+        <div class="module-title">${mod.title}</div>
+        <div class="module-sub">${locked ? '🔒 In arrivo al prossimo checkpoint' : mod.sub + ' · ' + tot + ' card'}</div>
+        ${locked ? '' : `<div class="module-progress"><div class="module-progress-fill" style="width:${pct}%"></div></div>`}
+      </div>
+      <div class="module-badge">${prog.done ? '🏆' : pct > 0 ? pct + '%' : ''}</div>`;
+    if (!locked) el.onclick = () => openModule(mod);
+    list.appendChild(el);
+  });
+}
+
+// ── FEED ─────────────────────────────────────────────────────────────────────
+let curMod = null;
+
+function openModule(mod) {
+  curMod = mod;
+  state.modules[mod.id] = state.modules[mod.id] || { card: 0, done: false, quizOk: 0, quizTot: 0 };
+  homeEl.classList.add('hidden');
+  feedEl.classList.remove('hidden');
+  renderCards(mod);
+  renderFeedXp();
+  // riprendi da dove eri
+  const at = state.modules[mod.id].done ? 0 : (state.modules[mod.id].card || 0);
+  requestAnimationFrame(() => {
+    cardsEl.scrollTo({ top: at * cardsEl.clientHeight, behavior: 'instant' });
+  });
+}
+
+function exitFeed() {
+  feedEl.classList.add('hidden');
+  homeEl.classList.remove('hidden');
+  renderHome();
+}
+
+function renderFeedXp() { $('feedXp').textContent = `⚡ ${state.xp}`; }
+
+function renderCards(mod) {
+  cardsEl.innerHTML = '';
+  mod.cards.forEach((c, i) => cardsEl.appendChild(buildCard(mod, c, i)));
+  cardsEl.appendChild(buildFinale(mod));
+  cardsEl.onscroll = onFeedScroll;
+  updateFeedProgress(0);
+}
+
+function cardIndex() {
+  return Math.round(cardsEl.scrollTop / cardsEl.clientHeight);
+}
+
+let scrollT = null;
+function onFeedScroll() {
+  clearTimeout(scrollT);
+  scrollT = setTimeout(() => {
+    const i = cardIndex();
+    updateFeedProgress(i);
+    const prog = state.modules[curMod.id];
+    if (i > (prog.card || 0) && !prog.done) { prog.card = i; saveState(); }
+    // XP lettura per card non-quiz mai viste
+    const c = curMod.cards[i];
+    const key = curMod.id + ':' + i;
+    if (c && c.type !== 'quiz' && !state.seen[key]) {
+      state.seen[key] = true;
+      gainXp(XP_LESSON, '📖');
+    }
+    $('swipeHint').style.display = i === 0 ? '' : 'none';
+  }, 120);
+}
+
+function updateFeedProgress(i) {
+  const tot = curMod.cards.length + 1;
+  $('feedProgressFill').style.width = Math.min(100, (i / (tot - 1)) * 100) + '%';
+}
+
+// ── Costruzione card ─────────────────────────────────────────────────────────
+function buildCard(mod, c, i) {
+  const el = document.createElement('div');
+  el.className = 'card' + (c.type === 'fact' ? ' fact' : '');
+  const kicker = `<div class="card-kicker">${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`;
+
+  if (c.type === 'lesson') {
+    el.innerHTML = `${kicker}
+      <div class="card-emoji">${c.emoji}</div>
+      <div class="card-title">${c.title}</div>
+      <div class="card-text">${c.text}</div>
+      ${c.analogy ? `<div class="analogy">${c.analogy}</div>` : ''}`;
+  }
+  else if (c.type === 'fact') {
+    el.innerHTML = `${kicker}
+      <div><span class="fact-label">💡 FUN FACT</span></div>
+      <div class="card-emoji">${c.emoji}</div>
+      <div class="card-title">${c.title}</div>
+      <div class="card-text">${c.text}</div>`;
+  }
+  else if (c.type === 'terminal') {
+    el.innerHTML = `${kicker}
+      <div class="card-emoji">${c.emoji || '💻'}</div>
+      <div class="card-title">${c.title}</div>
+      <div class="card-text">${c.text || ''}</div>
+      <div class="terminal">
+        <div class="terminal-bar"><span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+          <span class="terminal-title">tu@cachyos</span></div>
+        <div class="terminal-body">
+          <div class="term-cmd">${c.cmd}</div>
+          <div class="term-out hidden"></div>
+          <button class="term-reveal">▶ Esegui</button>
+        </div>
+      </div>`;
+    const out = el.querySelector('.term-out'), btn = el.querySelector('.term-reveal');
+    btn.onclick = () => {
+      out.textContent = c.out;
+      out.classList.remove('hidden');
+      out.style.animation = 'slideUp .3s ease';
+      btn.remove();
+    };
+  }
+  else if (c.type === 'quiz') {
+    el.innerHTML = `${kicker}
+      <div class="card-emoji">❓</div>
+      <div class="card-title">${c.q}</div>
+      <div class="quiz-options"></div>
+      <div class="quiz-zone"></div>`;
+    const box = el.querySelector('.quiz-options');
+    const zone = el.querySelector('.quiz-zone');
+    c.opts.forEach((opt, oi) => {
+      const b = document.createElement('button');
+      b.className = 'quiz-opt';
+      b.textContent = opt;
+      b.onclick = () => answerQuiz(mod, c, i, oi, box, zone);
+      box.appendChild(b);
+    });
+  }
+  return el;
+}
+
+function answerQuiz(mod, c, cardIdx, chosen, box, zone) {
+  const btns = [...box.children];
+  btns.forEach(b => b.disabled = true);
+  const ok = chosen === c.a;
+  btns[c.a].classList.add('correct');
+  if (!ok) btns[chosen].classList.add('wrong');
+
+  const prog = state.modules[mod.id];
+  const key = mod.id + ':' + cardIdx;
+  if (!state.seen[key]) {
+    state.seen[key] = true;
+    prog.quizTot++;
+    if (ok) {
+      prog.quizOk++;
+      gainXp(XP_QUIZ, '🎯');
+      confetti(40);
+    }
+    saveState();
+  }
+
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    <div class="quiz-explain">${c.explain}</div>`;
+}
+
+function buildFinale(mod) {
+  const el = document.createElement('div');
+  el.className = 'card finale';
+  el.innerHTML = `
+    <div class="card-emoji">🏆</div>
+    <div class="card-title">Modulo completato!</div>
+    <div class="card-text" id="finaleStats"></div>
+    <button class="btn-big">Torna al Dojo 🐧</button>`;
+  el.querySelector('.btn-big').onclick = exitFeed;
+
+  // observer: quando la card finale entra in vista → modulo completo
+  new IntersectionObserver((entries) => {
+    if (!entries[0].isIntersecting) return;
+    const prog = state.modules[mod.id];
+    el.querySelector('#finaleStats').innerHTML =
+      `Quiz azzeccati: <strong>${prog.quizOk}/${prog.quizTot || mod.cards.filter(c => c.type === 'quiz').length}</strong><br>Hai un cervello sempre più kernel-compatibile. 🧠🐧`;
+    if (!prog.done) {
+      prog.done = true;
+      saveState();
+      gainXp(XP_MODULE, '🏆 modulo!');
+      confetti(220);
+    }
+  }, { root: cardsEl, threshold: .6 }).observe(el);
+  return el;
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+let toastT = null;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.remove('hidden');
+  t.style.animation = 'none';
+  void t.offsetWidth; // restart animation
+  t.style.animation = '';
+  clearTimeout(toastT);
+  toastT = setTimeout(() => t.classList.add('hidden'), 1800);
+}
+
+// ── Coriandoli ───────────────────────────────────────────────────────────────
+const cvs = $('confetti'), ctx = cvs.getContext('2d');
+let parts = [], rafId = null;
+
+function confetti(n) {
+  cvs.width = innerWidth; cvs.height = innerHeight;
+  const colors = ['#7c5cff', '#00e5a0', '#ffc83d', '#ff4d6d', '#4dc9ff'];
+  for (let i = 0; i < n; i++) {
+    parts.push({
+      x: Math.random() * cvs.width, y: -20 - Math.random() * 80,
+      vx: (Math.random() - .5) * 4, vy: 2 + Math.random() * 4,
+      s: 5 + Math.random() * 6, r: Math.random() * Math.PI,
+      vr: (Math.random() - .5) * .3, c: pick(colors),
+    });
+  }
+  if (!rafId) tick();
+}
+
+function tick() {
+  ctx.clearRect(0, 0, cvs.width, cvs.height);
+  parts = parts.filter(p => p.y < cvs.height + 30);
+  for (const p of parts) {
+    p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vy += .05;
+    ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+    ctx.fillStyle = p.c; ctx.fillRect(-p.s / 2, -p.s / 2, p.s, p.s * .6);
+    ctx.restore();
+  }
+  rafId = parts.length ? requestAnimationFrame(tick) : null;
+}
+
+// ── Avvio ────────────────────────────────────────────────────────────────────
+$('btnExit').onclick = exitFeed;
+renderHome();
