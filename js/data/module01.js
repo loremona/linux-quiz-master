@@ -355,4 +355,38 @@ nvme                   49152  2` },
   a: 1,
   explain: `<code>shutdown -r +5</code>: <strong>-r</strong> = reboot, <strong>+5</strong> = tra 5 minuti, e shutdown manda in automatico l'avviso a tutti gli utenti loggati. È il comando "educato". 📢` },
 
+// ── RETROFIT CP5: input + missioni ───────────────────────────────────────────
+
+{ type: 'input', q: 'Quale comando systemd avvia un servizio E lo abilita all\'avvio permanente in un\'unica operazione?',
+  accept: ['systemctl enable --now', 'sudo systemctl enable --now'],
+  placeholder: 'systemctl ...',
+  explain: `<code>systemctl enable --now nomedelservizio</code> fa due cose in una: aggiunge il collegamento di avvio automatico (enable) e avvia il servizio subito (come start). Senza <strong>--now</strong> saresti costretto a fare enable + start separati. ⚡` },
+
+{ type: 'mission', emoji: '🎯', title: 'Missione: servizi systemd attivi',
+  text: `Sul tuo CachyOS elenca tutti i servizi systemd in stato "attivo in esecuzione" e cerca quello con più dipendenze.`,
+  solution: `# Lista servizi attivi (running)
+systemctl list-units --type=service --state=running
+
+# Dettaglio e dipendenze di un servizio specifico:
+systemctl status NetworkManager
+systemctl list-dependencies NetworkManager
+
+# PID del processo principale di un servizio:
+systemctl show NetworkManager --property=MainPID` },
+
+{ type: 'mission', emoji: '🎯', title: 'Missione: esplora /proc',
+  text: `Naviga nel filesystem virtuale <code>/proc</code> e scopri il cmdline del processo con PID 1 (systemd sul tuo sistema).`,
+  solution: `# Cmdline del PID 1 (systemd o init)
+cat /proc/1/cmdline | tr '\\0' ' '
+# oppure
+cat /proc/1/comm
+
+# Tutte le info sul processo 1:
+ls /proc/1/
+
+# Info sul kernel in esecuzione:
+cat /proc/version
+cat /proc/cpuinfo | head -20
+cat /proc/meminfo | head -10` },
+
 ];
