@@ -7,6 +7,7 @@ const STORE_KEY = 'linux-dojo-v1';
 const defaultState = () => ({
   xp: 0,
   streak: 0,
+  bestStreak: 0,
   lastDay: null,
   modules: {},   // id -> { card: ultimaCardVista, done: bool, quizOk: n, quizTot: n }
   seen: {},      // "modId:cardIdx" -> true (XP già assegnata)
@@ -34,6 +35,7 @@ function touchStreak() {
   const yesterday = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
   state.streak = (state.lastDay === yesterday) ? state.streak + 1 : 1;
   state.lastDay = today;
+  if (state.streak > (state.bestStreak || 0)) state.bestStreak = state.streak;
   saveState();
 }
 
@@ -92,6 +94,75 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const $ = id => document.getElementById(id);
 const homeEl = $('home'), feedEl = $('feed'), cardsEl = $('cards');
 
+// ── TEMA chiaro/scuro ────────────────────────────────────────────────────────
+function initTheme() {
+  const t = localStorage.getItem('linux-dojo-theme') || 'dark';
+  if (t === 'light') { document.body.classList.add('light-theme'); $('btnTheme').textContent = '🌙'; }
+  else { $('btnTheme').textContent = '☀️'; }
+}
+function toggleTheme() {
+  const isLight = document.body.classList.toggle('light-theme');
+  localStorage.setItem('linux-dojo-theme', isLight ? 'light' : 'dark');
+  $('btnTheme').textContent = isLight ? '🌙' : '☀️';
+}
+
+// ── STATISTICHE ──────────────────────────────────────────────────────────────
+function openStats() {
+  renderStats();
+  $('stats-overlay').classList.remove('hidden');
+}
+function closeStats() { $('stats-overlay').classList.add('hidden'); }
+
+function renderStats() {
+  const lvl = currentLevel(), nxt = nextLevel();
+  let totalDone = 0, totalCorrect = 0, totalQuiz = 0;
+  const modRows = MODULES.map(mod => {
+    const prog = state.modules[mod.id] || {};
+    if (prog.done) totalDone++;
+    totalCorrect += (prog.quizOk || 0);
+    totalQuiz += (prog.quizTot || 0);
+    const tot = mod.cards.length;
+    const at = prog.done ? tot : Math.min(prog.card || 0, tot);
+    const pct = prog.done ? 100 : Math.round(at / tot * 100);
+    const acc = prog.quizTot ? Math.round((prog.quizOk || 0) / prog.quizTot * 100) : null;
+    return { mod, prog, pct, acc };
+  });
+  const seenCount = Object.keys(state.seen).length;
+  const wrongCount = Object.keys(state.wrong).length;
+  const globalAcc = totalQuiz ? Math.round(totalCorrect / totalQuiz * 100) : null;
+  const best = Math.max(state.bestStreak || 0, state.streak);
+
+  $('stats-body').innerHTML = `
+    <div class="stats-hero">
+      <div class="stats-emoji">${lvl.emoji}</div>
+      <div>
+        <div class="stats-level">${lvl.name}</div>
+        <div class="stats-xp">${state.xp.toLocaleString('it')} XP${nxt ? ` · prossimo a ${nxt.xp}` : ' · MASSIMO 👑'}</div>
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stats-kv"><div class="stats-val">🔥 ${state.streak}</div><div class="stats-key">streak<br>attuale</div></div>
+      <div class="stats-kv"><div class="stats-val">🏆 ${best}</div><div class="stats-key">streak<br>record</div></div>
+      <div class="stats-kv"><div class="stats-val">📖 ${seenCount}</div><div class="stats-key">card<br>studiate</div></div>
+    </div>
+    <div class="stats-section-title">QUIZ</div>
+    <div class="stats-row">
+      <div class="stats-kv"><div class="stats-val">${globalAcc !== null ? globalAcc + '%' : '—'}</div><div class="stats-key">precisione<br>globale</div></div>
+      <div class="stats-kv"><div class="stats-val">${totalCorrect}/${totalQuiz}</div><div class="stats-key">corrette<br>/ totali</div></div>
+      <div class="stats-kv"><div class="stats-val${wrongCount > 0 ? ' warn' : ''}">${wrongCount}</div><div class="stats-key">errori da<br>ripassare</div></div>
+    </div>
+    <div class="stats-section-title">MODULI · ${totalDone}/10 COMPLETATI</div>
+    ${modRows.map(({ mod, prog, pct, acc }) => `
+      <div class="stats-mod-row">
+        <div class="stats-mod-icon">${mod.icon}</div>
+        <div class="stats-mod-info">
+          <div class="stats-mod-name">${mod.title}</div>
+          <div class="stats-mod-bar"><div class="stats-mod-fill${prog.done ? ' done' : ''}" style="width:${pct}%"></div></div>
+        </div>
+        <div class="stats-mod-acc">${acc !== null ? acc + '%' : '—'}</div>
+      </div>`).join('')}`;
+}
+
 // ── CHEATSHEET ───────────────────────────────────────────────────────────────
 function openCheatsheet(mod) {
   const data = CHEATSHEETS[mod.id];
@@ -142,18 +213,31 @@ function renderHome() {
     list.appendChild(rev);
   }
 
-  // Card simulatore esame — sempre visibile in fondo alla lista
-  const examEl = document.createElement('div');
-  examEl.className = 'module-card exam-card';
-  examEl.innerHTML = `
-    <div class="module-icon">📋</div>
-    <div class="module-meta">
-      <div class="module-title">Simulatore Esame LPIC-1</div>
-      <div class="module-sub">60 domande random · 90 min · punteggio 200–800 · soglia 500</div>
-    </div>
-    <div class="module-badge">🎓</div>`;
-  examEl.onclick = startExam;
-  list.appendChild(examEl);
+  // Sezione simulatori esame (3 card: 101, 102, completo)
+  const examSect = document.createElement('div');
+  examSect.innerHTML = `<div class="exam-section-title">🎓 Simulatori d'esame</div>`;
+
+  const makeExamCard = (icon, title, sub, tag, onClick, fullWidth) => {
+    const d = document.createElement('div');
+    d.className = 'module-card exam-card' + (fullWidth ? ' exam-full' : '');
+    d.innerHTML = `
+      <div class="module-icon">${icon}</div>
+      <div class="module-meta">
+        <div class="exam-tag">${tag}</div>
+        <div class="module-title">${title}</div>
+        <div class="module-sub">${sub}</div>
+      </div>`;
+    d.onclick = onClick;
+    return d;
+  };
+
+  const examRow = document.createElement('div');
+  examRow.className = 'exam-row';
+  examRow.appendChild(makeExamCard('📋', 'Esame 101', '30 domande · moduli 1–5 · 90 min', '101-500', startExam101));
+  examRow.appendChild(makeExamCard('📋', 'Esame 102', '30 domande · moduli 6–10 · 90 min', '102-500', startExam102));
+  examSect.appendChild(examRow);
+  examSect.appendChild(makeExamCard('🎓', 'Esame Completo', '60 domande da tutti i moduli · 90 min · soglia 500', 'Simulatore', startExamAll, true));
+  list.appendChild(examSect);
 
   MODULES.forEach((mod, i) => {
     const prog = state.modules[mod.id] || {};
@@ -165,6 +249,7 @@ function renderHome() {
     const el = document.createElement('div');
     el.className = 'module-card' + (prog.done ? ' done' : '') + (locked ? ' locked' : '');
     const hasCS = typeof CHEATSHEETS !== 'undefined' && !!CHEATSHEETS[mod.id];
+    const flashCount = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact').length;
     el.innerHTML = `
       <div class="module-icon">${mod.icon}</div>
       <div class="module-meta">
@@ -174,12 +259,19 @@ function renderHome() {
       </div>
       <div class="module-badge-area">
         <div class="module-badge">${prog.done ? '🏆' : pct > 0 ? pct + '%' : ''}</div>
+        ${!locked && flashCount > 0 ? `<button class="btn-cheatsheet">📖 flash</button>` : ''}
         ${hasCS && !locked ? `<button class="btn-cheatsheet">📄 cheat</button>` : ''}
       </div>`;
     if (!locked) {
       el.onclick = () => openModule(mod);
-      if (hasCS) {
+      if (flashCount > 0) {
         el.querySelector('.btn-cheatsheet').addEventListener('click', e => {
+          e.stopPropagation();
+          openFlash(mod);
+        });
+      }
+      if (hasCS) {
+        el.querySelectorAll('.btn-cheatsheet')[flashCount > 0 ? 1 : 0]?.addEventListener('click', e => {
           e.stopPropagation();
           openCheatsheet(mod);
         });
@@ -198,6 +290,7 @@ let examQuestions = [];
 let examAnswers = [];
 let examTimerSec = 0;
 let examTimerInterval = null;
+let flashMode = false;
 
 function openModule(mod) {
   curMod = mod;
@@ -239,6 +332,19 @@ function openReview() {
   renderFeedXp();
 }
 
+function openFlash(mod) {
+  const flashCards = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact');
+  if (!flashCards.length) return;
+  curMod = { ...mod, cards: flashCards };
+  reviewMode = false;
+  examMode = false;
+  flashMode = true;
+  homeEl.classList.add('hidden');
+  feedEl.classList.remove('hidden');
+  renderCards(curMod);
+  renderFeedXp();
+}
+
 function exitFeed() {
   if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
   reviewMode = false;
@@ -247,6 +353,7 @@ function exitFeed() {
   examQuestions = [];
   examAnswers = [];
   examTimerSec = 0;
+  flashMode = false;
   feedEl.classList.add('hidden');
   homeEl.classList.remove('hidden');
   renderHome();
@@ -283,7 +390,7 @@ function onFeedScroll() {
   scrollT = setTimeout(() => {
     const i = cardIndex();
     updateFeedProgress(i);
-    if (!reviewMode && !examMode) {
+    if (!reviewMode && !examMode && !flashMode) {
       const prog = state.modules[curMod.id];
       if (i > (prog.card || 0) && !prog.done) { prog.card = i; saveState(); }
       // XP lettura per card non-quiz mai viste
@@ -308,8 +415,10 @@ function buildCard(mod, c, i) {
   const el = document.createElement('div');
   el.className = 'card' + (c.type === 'fact' ? ' fact' : '');
   const kicker = examMode
-    ? `<div class="card-kicker exam-kicker">📋 Esame LPIC-1 · ${i + 1}/${mod.cards.length}</div>`
-    : `<div class="card-kicker">${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`;
+    ? `<div class="card-kicker exam-kicker">📋 ${curMod.title} · ${i + 1}/${mod.cards.length}</div>`
+    : flashMode
+      ? `<div class="card-kicker flash-kicker">📖 ${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`
+      : `<div class="card-kicker">${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`;
 
   if (c.type === 'lesson') {
     el.innerHTML = `${kicker}
@@ -532,6 +641,17 @@ function buildFinale(mod) {
   const el = document.createElement('div');
   el.className = 'card finale';
 
+  if (flashMode) {
+    el.innerHTML = `
+      <div class="card-emoji">📖</div>
+      <div class="card-title">Fine delle flashcard!</div>
+      <div class="card-text">Hai rivisto <strong>${mod.cards.length}</strong> lezioni e fun fact.<br>Ora torna al feed completo per fare i quiz! 🎯</div>
+      <div class="flash-finale-tip">Modalità ripasso: nessun XP, nessun progresso salvato. Per guadagnare XP usa il feed normale.</div>
+      <button class="btn-big" style="margin-top:1.2rem">Torna al Dojo 🐧</button>`;
+    el.querySelector('.btn-big').onclick = exitFeed;
+    return el;
+  }
+
   if (reviewMode) {
     el.innerHTML = `
       <div class="card-emoji">🔁</div>
@@ -576,10 +696,18 @@ function buildFinale(mod) {
   return el;
 }
 
-// ── Simulatore Esame (CP10) ──────────────────────────────────────────────────
-function startExam() {
+// ── Simulatore Esame (CP10 + CP13) ───────────────────────────────────────────
+const EXAM_COUNT_HALF = 30;
+const MODULES_101 = () => MODULES.filter(m => ['m01','m02','m03','m04','m05'].includes(m.id));
+const MODULES_102 = () => MODULES.filter(m => ['m06','m07','m08','m09','m10'].includes(m.id));
+
+function startExam101() { startExamWith(MODULES_101(), 'Esame 101', EXAM_COUNT_HALF); }
+function startExam102() { startExamWith(MODULES_102(), 'Esame 102', EXAM_COUNT_HALF); }
+function startExamAll() { startExamWith(MODULES, 'Esame Completo', EXAM_COUNT); }
+
+function startExamWith(mods, label, count) {
   const pool = [];
-  for (const mod of MODULES) {
+  for (const mod of mods) {
     mod.cards.forEach((card, idx) => {
       if (card.type === 'quiz' || card.type === 'input')
         pool.push({ card, modId: mod.id, origIdx: idx });
@@ -589,11 +717,12 @@ function startExam() {
     const j = Math.floor(Math.random() * (i + 1));
     [pool[i], pool[j]] = [pool[j], pool[i]];
   }
-  examQuestions = pool.slice(0, Math.min(EXAM_COUNT, pool.length));
+  examQuestions = pool.slice(0, Math.min(count, pool.length));
   examAnswers = new Array(examQuestions.length).fill(null);
   examMode = true;
+  flashMode = false;
   examTimerSec = EXAM_DURATION;
-  curMod = { id: 'exam', icon: '📋', title: 'Esame LPIC-1', cards: examQuestions.map(q => q.card) };
+  curMod = { id: 'exam', icon: '📋', title: label, cards: examQuestions.map(q => q.card) };
   homeEl.classList.add('hidden');
   feedEl.classList.remove('hidden');
   renderCards(curMod);
@@ -726,4 +855,5 @@ function tick() {
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 $('btnExit').onclick = exitFeed;
+initTheme();
 renderHome();
