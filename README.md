@@ -36,7 +36,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | **CP4** | **Modulo 5** + upgrade motore: mazzo "Ripasso errori 🔁" in home | ✅ Fatto |
 | **CP5** | **Modulo 6** (corto!) + retrofit: missioni e quiz `input` nei Moduli 1–2 | ✅ Fatto |
 | **CP6** | **Modulo 7** | ✅ Fatto |
-| **CP7** | **Modulo 8** | ⬜ |
+| **CP7** | **Modulo 8** | ✅ Fatto |
 | **CP8** | **Modulo 9** | ⬜ |
 | **CP9** | **Modulo 10** | ⬜ |
 | **CP10** | Simulatore Esame 101 + Esame 102 (60 domande, timer, punteggio LPI 200–800, soglia 500) | ⬜ |
@@ -54,7 +54,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | 5 | 🐚 Shell & scripting | 105.1, 105.2 (variabili, PATH, alias, .bashrc, script, if/for/while, test) | ✅ 40 card, 13 quiz (di cui 1 `input`, 3 missioni) |
 | 6 | 🖥️ Interfacce grafiche | 106.1–106.3 (X11, Wayland, display manager, accessibilità) | ✅ 18 card, 6 quiz (di cui 1 `input`, 1 missione) |
 | 7 | 👥 Amministrazione | 107.1–107.3 (useradd/usermod, /etc/passwd /shadow /group, cron, at, systemd timer, locale) | ✅ 36 card, 13 quiz (di cui 2 `input`, 3 missioni) |
-| 8 | ⚙️ Servizi di sistema | 108.1–108.4 (date/timedatectl/NTP/chrony, journald/rsyslog, MTA, CUPS) | ⬜ |
+| 8 | ⚙️ Servizi di sistema | 108.1–108.4 (date/timedatectl/NTP/chrony, journald/rsyslog, MTA, CUPS) | ✅ 33 card, 13 quiz (di cui 1 `input`, 3 missioni) |
 | 9 | 🌐 Networking | 109.1–109.4 (IP/CIDR, porte note, ip/ss/ping/traceroute, /etc/hosts, resolv.conf, DNS) | ⬜ |
 | 10 | 🔐 Sicurezza | 110.1–110.3 (sudo/su, SUID/SGID, ulimit, ssh + chiavi, gpg, last/who/w) | ⬜ |
 
