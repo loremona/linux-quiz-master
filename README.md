@@ -38,7 +38,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | **CP6** | **Modulo 7** | ✅ Fatto |
 | **CP7** | **Modulo 8** | ✅ Fatto |
 | **CP8** | **Modulo 9** | ✅ Fatto |
-| **CP9** | **Modulo 10** | ⬜ |
+| **CP9** | **Modulo 10** | ✅ Fatto |
 | **CP10** | Simulatore Esame 101 + Esame 102 (60 domande, timer, punteggio LPI 200–800, soglia 500) | ⬜ |
 | **CP11** | Cheatsheet per modulo + PWA offline (manifest + service worker) | ⬜ |
 | **CP12** | Migrazione in repo dedicato `linux-quiz-master` + GitHub Pages | ✅ Fatto (anticipato) |
@@ -56,7 +56,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | 7 | 👥 Amministrazione | 107.1–107.3 (useradd/usermod, /etc/passwd /shadow /group, cron, at, systemd timer, locale) | ✅ 36 card, 13 quiz (di cui 2 `input`, 3 missioni) |
 | 8 | ⚙️ Servizi di sistema | 108.1–108.4 (date/timedatectl/NTP/chrony, journald/rsyslog, MTA, CUPS) | ✅ 33 card, 13 quiz (di cui 1 `input`, 3 missioni) |
 | 9 | 🌐 Networking | 109.1–109.4 (IP/CIDR, porte note, ip/ss/ping/traceroute, /etc/hosts, resolv.conf, DNS) | ✅ 37 card, 14 quiz (di cui 1 `input`, 3 missioni) |
-| 10 | 🔐 Sicurezza | 110.1–110.3 (sudo/su, SUID/SGID, ulimit, ssh + chiavi, gpg, last/who/w) | ⬜ |
+| 10 | 🔐 Sicurezza | 110.1–110.3 (sudo/su, SUID/SGID, ulimit, ssh + chiavi, gpg, last/who/w) | ✅ 37 card, 14 quiz (di cui 2 `input`, 3 missioni) |
 
 ---
 
