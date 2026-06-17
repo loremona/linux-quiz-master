@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#0b0e1a"/>
+  <!-- terminal window -->
+  <rect x="48" y="110" width="416" height="292" rx="22" fill="#131830"/>
+  <rect x="48" y="110" width="416" height="46" rx="22" fill="#161b33"/>
+  <rect x="48" y="134" width="416" height="22" fill="#161b33"/>
+  <!-- traffic lights -->
+  <circle cx="90" cy="133" r="11" fill="#ff5f57"/>
+  <circle cx="126" cy="133" r="11" fill="#ffbd2e"/>
+  <circle cx="162" cy="133" r="11" fill="#28c840"/>
+  <!-- prompt line 1 -->
+  <rect x="80" y="185" width="14" height="32" rx="3" fill="#7c5cff"/>
+  <rect x="104" y="185" width="120" height="32" rx="3" fill="#7c5cff" opacity=".7"/>
+  <!-- prompt line 2 -->
+  <rect x="80" y="233" width="220" height="26" rx="3" fill="#00e5a0" opacity=".8"/>
+  <!-- prompt line 3 -->
+  <rect x="80" y="275" width="160" height="26" rx="3" fill="#ffc83d" opacity=".7"/>
+  <!-- cursor blink -->
+  <rect x="80" y="317" width="14" height="28" rx="2" fill="#7c5cff"/>
+  <!-- penguin emoji area -->
+  <text x="380" y="370" font-size="100" text-anchor="middle" font-family="serif">🐧</text>
+</svg>

@@ -92,6 +92,23 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)];
 const $ = id => document.getElementById(id);
 const homeEl = $('home'), feedEl = $('feed'), cardsEl = $('cards');
 
+// ── CHEATSHEET ───────────────────────────────────────────────────────────────
+function openCheatsheet(mod) {
+  const data = CHEATSHEETS[mod.id];
+  if (!data) return;
+  $('cs-title').textContent = data.title;
+  $('cs-body').innerHTML = data.sections.map(sec => `
+    <div class="cs-section">
+      <div class="cs-section-title">${sec.h}</div>
+      ${sec.items.map(it => `<div class="cs-item">${it}</div>`).join('')}
+    </div>`).join('');
+  $('cheatsheet-overlay').classList.remove('hidden');
+}
+
+function closeCheatsheet() {
+  $('cheatsheet-overlay').classList.add('hidden');
+}
+
 // ── HOME ─────────────────────────────────────────────────────────────────────
 function renderHome() {
   touchStreak();
@@ -147,6 +164,7 @@ function renderHome() {
 
     const el = document.createElement('div');
     el.className = 'module-card' + (prog.done ? ' done' : '') + (locked ? ' locked' : '');
+    const hasCS = typeof CHEATSHEETS !== 'undefined' && !!CHEATSHEETS[mod.id];
     el.innerHTML = `
       <div class="module-icon">${mod.icon}</div>
       <div class="module-meta">
@@ -154,8 +172,19 @@ function renderHome() {
         <div class="module-sub">${locked ? '🔒 In arrivo al prossimo checkpoint' : mod.sub + ' · ' + tot + ' card'}</div>
         ${locked ? '' : `<div class="module-progress"><div class="module-progress-fill" style="width:${pct}%"></div></div>`}
       </div>
-      <div class="module-badge">${prog.done ? '🏆' : pct > 0 ? pct + '%' : ''}</div>`;
-    if (!locked) el.onclick = () => openModule(mod);
+      <div class="module-badge-area">
+        <div class="module-badge">${prog.done ? '🏆' : pct > 0 ? pct + '%' : ''}</div>
+        ${hasCS && !locked ? `<button class="btn-cheatsheet">📄 cheat</button>` : ''}
+      </div>`;
+    if (!locked) {
+      el.onclick = () => openModule(mod);
+      if (hasCS) {
+        el.querySelector('.btn-cheatsheet').addEventListener('click', e => {
+          e.stopPropagation();
+          openCheatsheet(mod);
+        });
+      }
+    }
     list.appendChild(el);
   });
 }

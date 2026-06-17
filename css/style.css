@@ -332,3 +332,64 @@ body {
   #home, .card { max-width: 520px; margin-left: auto; margin-right: auto; }
   .feed-topbar { max-width: 520px; left: 50%; transform: translateX(-50%); }
 }
+
+/* ═══════════ Cheatsheet button in module card ═══════════ */
+.module-badge-area {
+  display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0;
+}
+.btn-cheatsheet {
+  background: rgba(124,92,255,.15); border: 1px solid #4a3f9f;
+  color: var(--accent); border-radius: 8px; padding: 4px 8px;
+  font-size: .75rem; cursor: pointer; white-space: nowrap;
+  transition: background .15s;
+}
+.btn-cheatsheet:hover { background: rgba(124,92,255,.3); }
+
+/* ═══════════ Cheatsheet modale ═══════════ */
+#cheatsheet-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(11,14,26,.92); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+}
+#cheatsheet-overlay.hidden { display: none !important; }
+
+.cs-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid #1e2550;
+  flex-shrink: 0;
+}
+.cs-title { flex: 1; font-size: 1.05rem; font-weight: 800; }
+.cs-close {
+  background: none; border: none; color: var(--muted);
+  font-size: 1.4rem; cursor: pointer; padding: 4px 8px;
+  border-radius: 8px; transition: color .15s;
+}
+.cs-close:hover { color: var(--text); }
+
+.cs-body {
+  flex: 1; overflow-y: auto; padding: 20px;
+  scrollbar-width: thin; scrollbar-color: #2a3160 transparent;
+}
+
+.cs-section { margin-bottom: 20px; }
+.cs-section-title {
+  font-size: .72rem; font-weight: 800; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--accent); margin-bottom: 10px;
+  padding-left: 2px;
+}
+.cs-item {
+  background: var(--bg2); border-radius: 10px;
+  padding: 10px 13px; margin-bottom: 6px;
+  font-size: .82rem; line-height: 1.55; color: var(--text);
+  border-left: 3px solid #2a3160;
+}
+.cs-item code {
+  background: #0d1129; border-radius: 5px;
+  padding: 1px 5px; font-family: 'Courier New', monospace;
+  font-size: .82rem; color: var(--accent2);
+}
+
+@media (min-width: 700px) {
+  #cheatsheet-overlay .cs-body { max-width: 560px; margin: 0 auto; width: 100%; }
+}
