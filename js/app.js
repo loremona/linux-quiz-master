@@ -62,6 +62,7 @@ function nextLevel() {
 
 // ── XP ───────────────────────────────────────────────────────────────────────
 const XP_LESSON = 5, XP_QUIZ = 25, XP_INPUT = 35, XP_MISSION = 20, XP_REVIEW = 15, XP_MODULE = 100;
+const EXAM_COUNT = 60, EXAM_DURATION = 90 * 60, EXAM_PASS_SCORE = 500;
 
 function gainXp(n, label) {
   const before = currentLevel();
@@ -124,6 +125,19 @@ function renderHome() {
     list.appendChild(rev);
   }
 
+  // Card simulatore esame — sempre visibile in fondo alla lista
+  const examEl = document.createElement('div');
+  examEl.className = 'module-card exam-card';
+  examEl.innerHTML = `
+    <div class="module-icon">📋</div>
+    <div class="module-meta">
+      <div class="module-title">Simulatore Esame LPIC-1</div>
+      <div class="module-sub">60 domande random · 90 min · punteggio 200–800 · soglia 500</div>
+    </div>
+    <div class="module-badge">🎓</div>`;
+  examEl.onclick = startExam;
+  list.appendChild(examEl);
+
   MODULES.forEach((mod, i) => {
     const prog = state.modules[mod.id] || {};
     const tot = mod.cards.length;
@@ -150,6 +164,11 @@ function renderHome() {
 let curMod = null;
 let reviewMode = false;
 let reviewOrigKeys = [];
+let examMode = false;
+let examQuestions = [];
+let examAnswers = [];
+let examTimerSec = 0;
+let examTimerInterval = null;
 
 function openModule(mod) {
   curMod = mod;
@@ -192,19 +211,35 @@ function openReview() {
 }
 
 function exitFeed() {
+  if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
   reviewMode = false;
   reviewOrigKeys = [];
+  examMode = false;
+  examQuestions = [];
+  examAnswers = [];
+  examTimerSec = 0;
   feedEl.classList.add('hidden');
   homeEl.classList.remove('hidden');
   renderHome();
 }
 
-function renderFeedXp() { $('feedXp').textContent = `⚡ ${state.xp}`; }
+function renderFeedXp() {
+  const el = $('feedXp');
+  if (examMode) {
+    const m = String(Math.floor(examTimerSec / 60)).padStart(2, '0');
+    const s = String(examTimerSec % 60).padStart(2, '0');
+    el.textContent = `⏱ ${m}:${s}`;
+    el.classList.toggle('exam-timer-warn', examTimerSec < 300);
+  } else {
+    el.textContent = `⚡ ${state.xp}`;
+    el.classList.remove('exam-timer-warn');
+  }
+}
 
 function renderCards(mod) {
   cardsEl.innerHTML = '';
   mod.cards.forEach((c, i) => cardsEl.appendChild(buildCard(mod, c, i)));
-  cardsEl.appendChild(buildFinale(mod));
+  cardsEl.appendChild(examMode ? buildExamFinale() : buildFinale(mod));
   cardsEl.onscroll = onFeedScroll;
   updateFeedProgress(0);
 }
@@ -219,7 +254,7 @@ function onFeedScroll() {
   scrollT = setTimeout(() => {
     const i = cardIndex();
     updateFeedProgress(i);
-    if (!reviewMode) {
+    if (!reviewMode && !examMode) {
       const prog = state.modules[curMod.id];
       if (i > (prog.card || 0) && !prog.done) { prog.card = i; saveState(); }
       // XP lettura per card non-quiz mai viste
@@ -243,7 +278,9 @@ function updateFeedProgress(i) {
 function buildCard(mod, c, i) {
   const el = document.createElement('div');
   el.className = 'card' + (c.type === 'fact' ? ' fact' : '');
-  const kicker = `<div class="card-kicker">${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`;
+  const kicker = examMode
+    ? `<div class="card-kicker exam-kicker">📋 Esame LPIC-1 · ${i + 1}/${mod.cards.length}</div>`
+    : `<div class="card-kicker">${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`;
 
   if (c.type === 'lesson') {
     el.innerHTML = `${kicker}
@@ -293,9 +330,11 @@ function buildCard(mod, c, i) {
       const b = document.createElement('button');
       b.className = 'quiz-opt';
       b.textContent = opt;
-      b.onclick = reviewMode
-        ? () => answerReviewQuiz(i, c, oi, box, zone)
-        : () => answerQuiz(mod, c, i, oi, box, zone);
+      b.onclick = examMode
+        ? () => answerExamQuiz(i, c, oi, box, zone)
+        : reviewMode
+          ? () => answerReviewQuiz(i, c, oi, box, zone)
+          : () => answerQuiz(mod, c, i, oi, box, zone);
       box.appendChild(b);
     });
   }
@@ -337,7 +376,7 @@ function buildCard(mod, c, i) {
   else if (c.type === 'input') {
     el.innerHTML = `${kicker}
       <div class="card-emoji">⌨️</div>
-      <div><span class="input-label">✍️ RISPOSTA SCRITTA · +${XP_INPUT} XP</span></div>
+      <div><span class="input-label">✍️ RISPOSTA SCRITTA${examMode ? '' : ' · +' + XP_INPUT + ' XP'}</span></div>
       <div class="card-title">${c.q}</div>
       <div class="input-row">
         <input class="quiz-input" type="text" placeholder="${c.placeholder || 'scrivi qui...'}"
@@ -348,9 +387,11 @@ function buildCard(mod, c, i) {
     const inp = el.querySelector('.quiz-input');
     const btn = el.querySelector('.btn-check');
     const zone = el.querySelector('.quiz-zone');
-    const submit = reviewMode
-      ? () => answerReviewInput(i, c, inp, btn, zone)
-      : () => answerInput(mod, c, i, inp, btn, zone);
+    const submit = examMode
+      ? () => answerExamInput(i, c, inp, btn, zone)
+      : reviewMode
+        ? () => answerReviewInput(i, c, inp, btn, zone)
+        : () => answerInput(mod, c, i, inp, btn, zone);
     btn.onclick = submit;
     inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
   }
@@ -503,6 +544,111 @@ function buildFinale(mod) {
       confetti(220);
     }
   }, { root: cardsEl, threshold: .6 }).observe(el);
+  return el;
+}
+
+// ── Simulatore Esame (CP10) ──────────────────────────────────────────────────
+function startExam() {
+  const pool = [];
+  for (const mod of MODULES) {
+    mod.cards.forEach((card, idx) => {
+      if (card.type === 'quiz' || card.type === 'input')
+        pool.push({ card, modId: mod.id, origIdx: idx });
+    });
+  }
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  examQuestions = pool.slice(0, Math.min(EXAM_COUNT, pool.length));
+  examAnswers = new Array(examQuestions.length).fill(null);
+  examMode = true;
+  examTimerSec = EXAM_DURATION;
+  curMod = { id: 'exam', icon: '📋', title: 'Esame LPIC-1', cards: examQuestions.map(q => q.card) };
+  homeEl.classList.add('hidden');
+  feedEl.classList.remove('hidden');
+  renderCards(curMod);
+  renderFeedXp();
+  examTimerInterval = setInterval(() => {
+    examTimerSec--;
+    renderFeedXp();
+    if (examTimerSec <= 0) {
+      clearInterval(examTimerInterval);
+      examTimerInterval = null;
+      cardsEl.scrollTo({ top: curMod.cards.length * cardsEl.clientHeight, behavior: 'smooth' });
+    }
+  }, 1000);
+}
+
+function answerExamQuiz(examIdx, c, chosen, box, zone) {
+  const btns = [...box.children];
+  btns.forEach(b => b.disabled = true);
+  const ok = chosen === c.a;
+  btns[c.a].classList.add('correct');
+  if (!ok) btns[chosen].classList.add('wrong');
+  if (examAnswers[examIdx] === null) examAnswers[examIdx] = ok;
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    <div class="quiz-explain">${c.explain}</div>`;
+}
+
+function answerExamInput(examIdx, c, inp, btn, zone) {
+  const given = normAnswer(inp.value);
+  if (!given) { inp.focus(); return; }
+  const ok = c.accept.some(a => normAnswer(a) === given);
+  inp.disabled = true;
+  btn.disabled = true;
+  inp.classList.add(ok ? 'correct' : 'wrong');
+  if (examAnswers[examIdx] === null) examAnswers[examIdx] = ok;
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    ${ok ? '' : `<div class="input-answer">La risposta era: <code>${c.accept[0]}</code></div>`}
+    <div class="quiz-explain">${c.explain}</div>`;
+}
+
+function buildExamFinale() {
+  const el = document.createElement('div');
+  el.className = 'card finale exam-finale';
+  el.innerHTML = `
+    <div class="card-emoji">📋</div>
+    <div class="card-title">Risultati Esame</div>
+    <div id="examResults"><div class="exam-loading">Calcolo in corso…</div></div>
+    <button class="btn-big">Torna al Dojo 🐧</button>`;
+  el.querySelector('.btn-big').onclick = exitFeed;
+
+  new IntersectionObserver((entries) => {
+    if (!entries[0].isIntersecting) return;
+    if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
+    const total = examQuestions.length;
+    const correct = examAnswers.filter(a => a === true).length;
+    const unanswered = examAnswers.filter(a => a === null).length;
+    const score = Math.round(200 + (correct / total) * 600);
+    const passed = score >= EXAM_PASS_SCORE;
+    const used = EXAM_DURATION - examTimerSec;
+    const mu = String(Math.floor(used / 60)).padStart(2, '0');
+    const su = String(used % 60).padStart(2, '0');
+    const barPct = ((score - 200) / 600 * 100).toFixed(1);
+    el.querySelector('#examResults').innerHTML = `
+      <div class="exam-score ${passed ? 'pass' : 'fail'}">${score}</div>
+      <div class="exam-score-label">${passed ? '✅ PROMOSSO!' : '❌ Non sufficiente'}</div>
+      <div class="exam-stats">
+        <div>Corrette: <strong>${correct} / ${total}</strong></div>
+        <div>Non risposte: <strong>${unanswered}</strong></div>
+        <div>Soglia: <strong>${EXAM_PASS_SCORE} / 800</strong></div>
+        <div>Tempo: <strong>${mu}:${su}</strong></div>
+      </div>
+      <div class="exam-bar-wrap">
+        <div class="exam-bar">
+          <div class="exam-bar-fill ${passed ? 'pass' : 'fail'}" style="width:${barPct}%"></div>
+          <div class="exam-bar-threshold"></div>
+        </div>
+        <div class="exam-bar-labels">
+          <span>200</span><span style="color:var(--gold)">▲ 500 pass</span><span>800</span>
+        </div>
+      </div>
+      ${passed ? '<div class="exam-tip">🎉 Ora sei pronto per il vero esame LPI!</div>' : '<div class="exam-tip">💡 Ripassare i moduli con più errori e usare il mazzo "Ripasso errori"!</div>'}`;
+    if (passed) confetti(300);
+  }, { root: cardsEl, threshold: .5 }).observe(el);
   return el;
 }
 

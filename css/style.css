@@ -265,6 +265,61 @@ body {
 
 #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
 
+/* ═══════════ Simulatore Esame (CP10) ═══════════ */
+.exam-card { border-color: var(--gold) !important; background: linear-gradient(135deg, #2a2000, var(--card)) !important; }
+.exam-kicker { color: var(--gold); }
+.exam-timer-warn { color: var(--danger) !important; animation: pulse .8s infinite alternate; }
+@keyframes pulse { from { opacity: 1; } to { opacity: .5; } }
+
+.card.exam-finale { background: radial-gradient(circle at 50% 30%, #1a1200 0%, var(--bg) 75%); }
+
+.exam-score {
+  font-size: 4.5rem; font-weight: 900; letter-spacing: -3px;
+  line-height: 1; margin: .5rem 0;
+  animation: pop .6s cubic-bezier(.2, .9, .3, 1.4);
+}
+.exam-score.pass { color: var(--accent2); text-shadow: 0 0 40px rgba(0,229,160,.5); }
+.exam-score.fail { color: var(--danger); text-shadow: 0 0 40px rgba(255,77,109,.4); }
+.exam-score-label { font-size: 1.1rem; font-weight: 800; margin-bottom: 1rem; }
+
+.exam-stats {
+  text-align: left; background: var(--bg2); border: 1px solid #2a3160;
+  border-radius: 14px; padding: 14px 16px; margin: 1rem 0;
+  font-size: .92rem; line-height: 1.9;
+}
+.exam-stats strong { color: var(--accent2); }
+
+.exam-bar-wrap { margin: 1rem 0; }
+.exam-bar {
+  position: relative; height: 14px;
+  background: #1e2340; border-radius: 999px; overflow: visible;
+}
+.exam-bar-fill {
+  height: 100%; border-radius: 999px;
+  transition: width 1.2s cubic-bezier(.2, .9, .3, 1);
+}
+.exam-bar-fill.pass { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+.exam-bar-fill.fail { background: linear-gradient(90deg, var(--danger), #ff9800); }
+.exam-bar-threshold {
+  position: absolute;
+  left: 50%; top: -5px; /* (500-200)/(800-200) = 50% */
+  width: 3px; height: 24px;
+  background: var(--gold);
+  border-radius: 2px;
+  transform: translateX(-50%);
+}
+.exam-bar-labels {
+  display: flex; justify-content: space-between;
+  font-size: .75rem; color: var(--muted); margin-top: .4rem;
+}
+
+.exam-tip {
+  margin-top: 1rem; padding: 12px 14px;
+  background: rgba(124,92,255,.1); border: 1px dashed #4a3f9f;
+  border-radius: 14px; font-size: .88rem; color: #c9c2ff;
+}
+.exam-loading { color: var(--muted); font-size: 1rem; padding: 1rem 0; }
+
 /* ═══════════ Animazioni ═══════════ */
 @keyframes pop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
