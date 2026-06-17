@@ -60,7 +60,7 @@ function nextLevel() {
 }
 
 // ── XP ───────────────────────────────────────────────────────────────────────
-const XP_LESSON = 5, XP_QUIZ = 25, XP_INPUT = 35, XP_MODULE = 100;
+const XP_LESSON = 5, XP_QUIZ = 25, XP_INPUT = 35, XP_MISSION = 20, XP_MODULE = 100;
 
 function gainXp(n, label) {
   const before = currentLevel();
@@ -176,7 +176,7 @@ function onFeedScroll() {
     // XP lettura per card non-quiz mai viste
     const c = curMod.cards[i];
     const key = curMod.id + ':' + i;
-    if (c && c.type !== 'quiz' && c.type !== 'input' && !state.seen[key]) {
+    if (c && c.type !== 'quiz' && c.type !== 'input' && c.type !== 'mission' && !state.seen[key]) {
       state.seen[key] = true;
       gainXp(XP_LESSON, '📖');
     }
@@ -246,6 +246,41 @@ function buildCard(mod, c, i) {
       b.onclick = () => answerQuiz(mod, c, i, oi, box, zone);
       box.appendChild(b);
     });
+  }
+  else if (c.type === 'mission') {
+    el.classList.add('mission');
+    const mKey = mod.id + ':' + i;
+    const done = !!state.seen[mKey];
+    el.innerHTML = `${kicker}
+      <div class="card-emoji">${c.emoji || '🎯'}</div>
+      <div><span class="mission-label">🎯 MISSIONE · +${XP_MISSION} XP</span></div>
+      <div class="card-title">${c.title}</div>
+      <div class="card-text">${c.text}</div>
+      <div class="mission-zone">
+        <button class="btn-solution">👁 Mostra soluzione</button>
+        <pre class="mission-solution hidden">${c.solution}</pre>
+        <button class="btn-done${done ? ' done' : ''}" ${done ? 'disabled' : ''}>
+          ${done ? '✅ Già completata!' : '✅ Fatta!'}
+        </button>
+      </div>`;
+    const solBtn = el.querySelector('.btn-solution');
+    const solPre = el.querySelector('.mission-solution');
+    const doneBtn = el.querySelector('.btn-done');
+    solBtn.onclick = () => {
+      const hidden = solPre.classList.toggle('hidden');
+      solBtn.textContent = hidden ? '👁 Mostra soluzione' : '🙈 Nascondi soluzione';
+    };
+    if (!done) {
+      doneBtn.onclick = () => {
+        state.seen[mKey] = true;
+        saveState();
+        gainXp(XP_MISSION, '🎯');
+        confetti(80);
+        doneBtn.textContent = '✅ Già completata!';
+        doneBtn.disabled = true;
+        doneBtn.classList.add('done');
+      };
+    }
   }
   else if (c.type === 'input') {
     el.innerHTML = `${kicker}
