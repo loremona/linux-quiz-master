@@ -219,6 +219,18 @@ body {
   font-family: 'JetBrains Mono', 'Fira Code', monospace; color: var(--accent2); font-weight: 700;
 }
 
+/* card tipo MISSION */
+.card.mission { background: radial-gradient(circle at 30% 20%, #1f3828 0%, var(--bg) 70%); }
+.mission-label { display: inline-block; background: linear-gradient(90deg, #ff9800, #ff6f00); color: #1a0800; font-weight: 900; font-size: .72rem; letter-spacing: 1.5px; padding: 5px 12px; border-radius: 999px; margin-bottom: 16px; }
+.mission-zone { margin-top: 24px; display: flex; flex-direction: column; gap: 12px; }
+.mission-solution { background: #0a0d18; border: 1px solid #232a55; border-radius: 14px; padding: 16px; font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: .86rem; color: var(--accent2); white-space: pre; word-break: break-all; overflow-x: auto; animation: slideUp .3s ease; }
+.btn-solution { background: rgba(255,255,255,.07); border: 1px solid #3a4070; color: var(--text); border-radius: 14px; padding: 13px 20px; font-size: .95rem; font-weight: 700; cursor: pointer; transition: transform .1s, background .15s; text-align: center; }
+.btn-solution:active { transform: scale(.97); background: rgba(255,255,255,.12); }
+.btn-done { background: linear-gradient(90deg, #00c853, #00e676); color: #001a00; border: none; border-radius: 14px; padding: 16px 20px; font-size: 1rem; font-weight: 900; cursor: pointer; transition: transform .1s; }
+.btn-done:active { transform: scale(.96); }
+.btn-done:disabled { opacity: .5; cursor: default; transform: none; }
+.btn-done.done { background: rgba(0,229,160,.15); color: var(--accent2); border: 1px solid var(--accent2); }
+
 /* card finale modulo */
 .card.finale { text-align: center; background: radial-gradient(circle at 50% 30%, #1f4536 0%, var(--bg) 75%); }
 .finale .card-emoji { font-size: 5rem; }
