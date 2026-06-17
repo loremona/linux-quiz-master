@@ -1,0 +1,17 @@
+{
+  "name": "Linux Dojo — LPIC-1",
+  "short_name": "Linux Dojo",
+  "description": "Impara Linux come TikTok: card, quiz, XP, streak, esame simulato",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b0e1a",
+  "theme_color": "#0b0e1a",
+  "categories": ["education", "productivity"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

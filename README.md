@@ -40,7 +40,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | **CP8** | **Modulo 9** | ✅ Fatto |
 | **CP9** | **Modulo 10** | ✅ Fatto |
 | **CP10** | Simulatore Esame 101 + Esame 102 (60 domande, timer, punteggio LPI 200–800, soglia 500) | ✅ Fatto |
-| **CP11** | Cheatsheet per modulo + PWA offline (manifest + service worker) | ⬜ |
+| **CP11** | Cheatsheet per modulo + PWA offline (manifest + service worker) | ✅ Fatto |
 | **CP12** | Migrazione in repo dedicato `linux-quiz-master` + GitHub Pages | ✅ Fatto (anticipato) |
 
 ### I 10 moduli (= programma d'esame LPIC-1 completo)
