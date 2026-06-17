@@ -10,6 +10,7 @@ const defaultState = () => ({
   lastDay: null,
   modules: {},   // id -> { card: ultimaCardVista, done: bool, quizOk: n, quizTot: n }
   seen: {},      // "modId:cardIdx" -> true (XP già assegnata)
+  wrong: {},     // "modId:cardIdx" -> true (quiz sbagliati al primo tentativo)
 });
 
 let state = loadState();
@@ -60,7 +61,7 @@ function nextLevel() {
 }
 
 // ── XP ───────────────────────────────────────────────────────────────────────
-const XP_LESSON = 5, XP_QUIZ = 25, XP_INPUT = 35, XP_MISSION = 20, XP_MODULE = 100;
+const XP_LESSON = 5, XP_QUIZ = 25, XP_INPUT = 35, XP_MISSION = 20, XP_REVIEW = 15, XP_MODULE = 100;
 
 function gainXp(n, label) {
   const before = currentLevel();
@@ -106,6 +107,23 @@ function renderHome() {
 
   const list = $('moduleList');
   list.innerHTML = '';
+
+  // Card ripasso errori (CP4) — appare in cima se ci sono quiz sbagliati
+  const wrongCount = Object.keys(state.wrong).length;
+  if (wrongCount > 0) {
+    const rev = document.createElement('div');
+    rev.className = 'module-card review-deck';
+    rev.innerHTML = `
+      <div class="module-icon">🔁</div>
+      <div class="module-meta">
+        <div class="module-title">Ripasso errori</div>
+        <div class="module-sub">${wrongCount} quiz da ripassare</div>
+      </div>
+      <div class="module-badge"><span class="review-count">${wrongCount}</span></div>`;
+    rev.onclick = openReview;
+    list.appendChild(rev);
+  }
+
   MODULES.forEach((mod, i) => {
     const prog = state.modules[mod.id] || {};
     const tot = mod.cards.length;
@@ -130,9 +148,12 @@ function renderHome() {
 
 // ── FEED ─────────────────────────────────────────────────────────────────────
 let curMod = null;
+let reviewMode = false;
+let reviewOrigKeys = [];
 
 function openModule(mod) {
   curMod = mod;
+  reviewMode = false;
   state.modules[mod.id] = state.modules[mod.id] || { card: 0, done: false, quizOk: 0, quizTot: 0 };
   homeEl.classList.add('hidden');
   feedEl.classList.remove('hidden');
@@ -145,7 +166,34 @@ function openModule(mod) {
   });
 }
 
+function openReview() {
+  const keys = Object.keys(state.wrong);
+  if (!keys.length) return;
+
+  reviewOrigKeys = [];
+  const cards = [];
+  for (const key of keys) {
+    const colonIdx = key.lastIndexOf(':');
+    const modId = key.slice(0, colonIdx);
+    const cardIdx = parseInt(key.slice(colonIdx + 1), 10);
+    const mod = MODULES.find(m => m.id === modId);
+    if (!mod || !mod.cards[cardIdx]) continue;
+    reviewOrigKeys.push(key);
+    cards.push(mod.cards[cardIdx]);
+  }
+  if (!cards.length) return;
+
+  reviewMode = true;
+  curMod = { id: 'review', icon: '🔁', title: 'Ripasso errori', cards };
+  homeEl.classList.add('hidden');
+  feedEl.classList.remove('hidden');
+  renderCards(curMod);
+  renderFeedXp();
+}
+
 function exitFeed() {
+  reviewMode = false;
+  reviewOrigKeys = [];
   feedEl.classList.add('hidden');
   homeEl.classList.remove('hidden');
   renderHome();
@@ -171,14 +219,16 @@ function onFeedScroll() {
   scrollT = setTimeout(() => {
     const i = cardIndex();
     updateFeedProgress(i);
-    const prog = state.modules[curMod.id];
-    if (i > (prog.card || 0) && !prog.done) { prog.card = i; saveState(); }
-    // XP lettura per card non-quiz mai viste
-    const c = curMod.cards[i];
-    const key = curMod.id + ':' + i;
-    if (c && c.type !== 'quiz' && c.type !== 'input' && c.type !== 'mission' && !state.seen[key]) {
-      state.seen[key] = true;
-      gainXp(XP_LESSON, '📖');
+    if (!reviewMode) {
+      const prog = state.modules[curMod.id];
+      if (i > (prog.card || 0) && !prog.done) { prog.card = i; saveState(); }
+      // XP lettura per card non-quiz mai viste
+      const c = curMod.cards[i];
+      const key = curMod.id + ':' + i;
+      if (c && c.type !== 'quiz' && c.type !== 'input' && c.type !== 'mission' && !state.seen[key]) {
+        state.seen[key] = true;
+        gainXp(XP_LESSON, '📖');
+      }
     }
     $('swipeHint').style.display = i === 0 ? '' : 'none';
   }, 120);
@@ -243,7 +293,9 @@ function buildCard(mod, c, i) {
       const b = document.createElement('button');
       b.className = 'quiz-opt';
       b.textContent = opt;
-      b.onclick = () => answerQuiz(mod, c, i, oi, box, zone);
+      b.onclick = reviewMode
+        ? () => answerReviewQuiz(i, c, oi, box, zone)
+        : () => answerQuiz(mod, c, i, oi, box, zone);
       box.appendChild(b);
     });
   }
@@ -296,7 +348,9 @@ function buildCard(mod, c, i) {
     const inp = el.querySelector('.quiz-input');
     const btn = el.querySelector('.btn-check');
     const zone = el.querySelector('.quiz-zone');
-    const submit = () => answerInput(mod, c, i, inp, btn, zone);
+    const submit = reviewMode
+      ? () => answerReviewInput(i, c, inp, btn, zone)
+      : () => answerInput(mod, c, i, inp, btn, zone);
     btn.onclick = submit;
     inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
   }
@@ -323,6 +377,8 @@ function answerInput(mod, c, cardIdx, inp, btn, zone) {
       prog.quizOk++;
       gainXp(XP_INPUT, '⌨️');
       confetti(60);
+    } else {
+      state.wrong[key] = true;
     }
     saveState();
   }
@@ -349,6 +405,8 @@ function answerQuiz(mod, c, cardIdx, chosen, box, zone) {
       prog.quizOk++;
       gainXp(XP_QUIZ, '🎯');
       confetti(40);
+    } else {
+      state.wrong[key] = true;
     }
     saveState();
   }
@@ -358,9 +416,73 @@ function answerQuiz(mod, c, cardIdx, chosen, box, zone) {
     <div class="quiz-explain">${c.explain}</div>`;
 }
 
+// ── Ripasso errori (CP4) ─────────────────────────────────────────────────────
+function answerReviewQuiz(reviewIdx, c, chosen, box, zone) {
+  const btns = [...box.children];
+  btns.forEach(b => b.disabled = true);
+  const ok = chosen === c.a;
+  btns[c.a].classList.add('correct');
+  if (!ok) btns[chosen].classList.add('wrong');
+
+  if (ok && reviewOrigKeys[reviewIdx]) {
+    delete state.wrong[reviewOrigKeys[reviewIdx]];
+    saveState();
+    gainXp(XP_REVIEW, '🔁');
+    confetti(40);
+  }
+
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    ${ok ? '<div class="review-ok-msg">✅ Rimosso dal mazzo errori!</div>' : ''}
+    <div class="quiz-explain">${c.explain}</div>`;
+}
+
+function answerReviewInput(reviewIdx, c, inp, btn, zone) {
+  const given = normAnswer(inp.value);
+  if (!given) { inp.focus(); return; }
+  const ok = c.accept.some(a => normAnswer(a) === given);
+  inp.disabled = true;
+  btn.disabled = true;
+  inp.classList.add(ok ? 'correct' : 'wrong');
+
+  if (ok && reviewOrigKeys[reviewIdx]) {
+    delete state.wrong[reviewOrigKeys[reviewIdx]];
+    saveState();
+    gainXp(XP_REVIEW, '🔁');
+    confetti(60);
+  }
+
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    ${ok ? '<div class="review-ok-msg">✅ Rimosso dal mazzo errori!</div>' : `<div class="input-answer">La risposta era: <code>${c.accept[0]}</code></div>`}
+    <div class="quiz-explain">${c.explain}</div>`;
+}
+
 function buildFinale(mod) {
   const el = document.createElement('div');
   el.className = 'card finale';
+
+  if (reviewMode) {
+    el.innerHTML = `
+      <div class="card-emoji">🔁</div>
+      <div class="card-title">Fine del ripasso!</div>
+      <div class="card-text" id="finaleStats"></div>
+      <button class="btn-big">Torna al Dojo 🐧</button>`;
+    el.querySelector('.btn-big').onclick = exitFeed;
+    new IntersectionObserver((entries) => {
+      if (!entries[0].isIntersecting) return;
+      const remaining = Object.keys(state.wrong).length;
+      const statsEl = el.querySelector('#finaleStats');
+      if (remaining === 0) {
+        statsEl.innerHTML = `Hai azzerato tutti gli errori! 🎉<br>Cervello laser! 🧠⚡`;
+        confetti(200);
+      } else {
+        statsEl.innerHTML = `Errori rimasti: <strong>${remaining}</strong><br>Continua a ripassare! 💪`;
+      }
+    }, { root: cardsEl, threshold: .6 }).observe(el);
+    return el;
+  }
+
   el.innerHTML = `
     <div class="card-emoji">🏆</div>
     <div class="card-title">Modulo completato!</div>
