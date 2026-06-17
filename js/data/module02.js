@@ -276,4 +276,40 @@ Total Download Size:   312.44 MiB
   a: 1,
   explain: `<code>apt update</code> scarica solo il "volantino": l'elenco aggiornato di ciò che i repo offrono. Per installare davvero gli aggiornamenti serve <code>apt upgrade</code>. Trappola d'esame classica, ora sei vaccinato. 💉` },
 
+// ── RETROFIT CP5: input + missioni ───────────────────────────────────────────
+
+{ type: 'input', q: 'Con dpkg, quale opzione (short) mostra lo stato e i dettagli di un pacchetto installato?',
+  accept: ['dpkg -s', 'dpkg --status'],
+  placeholder: 'dpkg ...',
+  explain: `<code>dpkg -s nomepacchetto</code> (o --status) mostra stato, versione, dipendenze e descrizione. Diverso da <code>dpkg -l</code> che elenca tutti i pacchetti in formato corto. L'esame li chiede entrambi — -s per un pacchetto, -l per tutti. 📦` },
+
+{ type: 'mission', emoji: '🎯', title: 'Missione: caccia al pacchetto',
+  text: `Scopri a quale pacchetto appartiene il comando <code>/usr/bin/python3</code> sul tuo sistema.`,
+  solution: `# Su Arch/CachyOS con pacman:
+pacman -Qo /usr/bin/python3
+
+# Su Debian/Ubuntu con dpkg:
+dpkg -S /usr/bin/python3
+
+# Alternativa: vedi se è un symlink
+ls -la /usr/bin/python3
+
+# Con apt-file (richiede install):
+# apt-file search /usr/bin/python3` },
+
+{ type: 'mission', emoji: '🎯', title: 'Missione: pacchetti orfani',
+  text: `Trova i pacchetti installati come dipendenze ma non più necessari sul tuo sistema.`,
+  solution: `# Su Arch/CachyOS — orfani (dipendenze non più richieste):
+pacman -Qdt
+
+# Rimuoverli (dopo review!):
+pacman -Rns $(pacman -Qdtq)
+
+# Pacchetti installati esplicitamente (non come dipendenze):
+pacman -Qe
+
+# Su Debian/Ubuntu:
+apt autoremove --dry-run    # simula prima
+apt autoremove              # poi esegui` },
+
 ];
