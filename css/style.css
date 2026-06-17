@@ -92,6 +92,11 @@ body {
 
 .home-footer { text-align: center; color: #3d4470; font-size: .75rem; margin-top: 34px; }
 
+/* mazzo ripasso errori (CP4) */
+.review-deck { border-color: var(--gold) !important; background: linear-gradient(135deg, #2a2000, var(--card)) !important; }
+.review-count { background: var(--gold); color: #1a1000; font-size: .82rem; font-weight: 900; padding: 4px 11px; border-radius: 999px; }
+.review-ok-msg { margin-top: 10px; color: var(--accent2); font-weight: 800; font-size: .95rem; animation: slideUp .3s ease; }
+
 /* ═══════════ FEED ═══════════ */
 #feed { background: var(--bg); }
 

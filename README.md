@@ -33,7 +33,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | **CP1** | **Modulo 2** | ✅ Fatto |
 | **CP2** | **Modulo 3** + upgrade motore: quiz a risposta scritta (tipo `input`) | ✅ Fatto |
 | **CP3** | **Modulo 4** + upgrade motore: card "🎯 Missione" | ✅ Fatto |
-| **CP4** | **Modulo 5** + upgrade motore: mazzo "Ripasso errori 🔁" in home | ⬜ |
+| **CP4** | **Modulo 5** + upgrade motore: mazzo "Ripasso errori 🔁" in home | ✅ Fatto |
 | **CP5** | **Modulo 6** (corto!) + retrofit: missioni e quiz `input` nei Moduli 1–2 | ⬜ |
 | **CP6** | **Modulo 7** | ⬜ |
 | **CP7** | **Modulo 8** | ⬜ |
@@ -51,7 +51,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | 2 | 📦 Pacchetti & installazione | 102.1–102.6 (+ pacman/AUR extra) | ✅ 29 card, 11 quiz |
 | 3 | ⌨️ Comandi GNU & Unix | 103.1–103.8 (cd/ls/cp, pipe, redirect, grep, regex, sort/cut/wc/tr, ps/kill/nice, vi) | ✅ 35 card, 15 quiz (di cui 4 `input`) |
 | 4 | 💾 Dischi & filesystem | 104.1–104.7 (mkfs, fsck, mount/umount, df/du, permessi, chmod/chown, link, FHS, find/locate) | ✅ 41 card, 12 quiz (di cui 1 `input`, 3 missioni) |
-| 5 | 🐚 Shell & scripting | 105.1, 105.2 (variabili, PATH, alias, .bashrc, script, if/for/while, test) | ⬜ |
+| 5 | 🐚 Shell & scripting | 105.1, 105.2 (variabili, PATH, alias, .bashrc, script, if/for/while, test) | ✅ 40 card, 13 quiz (di cui 1 `input`, 3 missioni) |
 | 6 | 🖥️ Interfacce grafiche | 106.1–106.3 (X11, Wayland, display manager, accessibilità) — modulo CORTO, ~15 card | ⬜ |
 | 7 | 👥 Amministrazione | 107.1–107.3 (useradd/usermod, /etc/passwd /shadow /group, cron, at, systemd timer, locale) | ⬜ |
 | 8 | ⚙️ Servizi di sistema | 108.1–108.4 (date/timedatectl/NTP/chrony, journald/rsyslog, MTA, CUPS) | ⬜ |
