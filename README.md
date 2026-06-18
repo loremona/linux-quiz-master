@@ -43,6 +43,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | **CP11** | Cheatsheet per modulo + PWA offline (manifest + service worker) | ✅ Fatto |
 | **CP12** | Migrazione in repo dedicato `linux-quiz-master` + GitHub Pages | ✅ Fatto (anticipato) |
 | **CP13** | Statistiche dettagliate · Flashcard mode · Esami 101/102 separati · Tema chiaro/scuro | ✅ Fatto |
+| **CP14** | Ricerca globale tra le card · Quiz Drill mode per modulo (solo quiz, senza XP) | ✅ Fatto |
 
 ### I 10 moduli (= programma d'esame LPIC-1 completo)
 
