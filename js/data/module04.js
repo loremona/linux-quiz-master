@@ -1,6 +1,6 @@
 /* ═══════════ MODULO 4 — Dischi & Filesystem ═══════════
    Obiettivi LPI: 104.1–104.7
-   Card totali: 41 (12 quiz + 1 input + 3 missioni) */
+   Card totali: 55 (21 quiz + 2 input + 3 missioni) */
 'use strict';
 
 const MODULE04 = [
@@ -368,6 +368,129 @@ TRAPPOLA! locate non trova file creati <em>dopo</em> l'ultimo updatedb.`,
     a: 0,
     explain: `Il trattino in -perm -4000 significa "almeno questi bit impostati" (altri bit possono esserci). -perm 4000 senza trattino troverebbe solo file con ESATTAMENTE 4000 di permessi — praticamente nessuno. -suid non è un'opzione di find. locate non supporta filtri sui permessi. 🔍` },
 
+  // ── QUOTE DISCO (104.4) ──────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '⚖️', title: 'Quote disco: la dieta per utente',
+    text: `Le <strong>quote</strong> limitano lo spazio su disco (e il numero di file) per utente o gruppo.<br>
+Due tipi di limite:<br>
+• <strong>soft limit</strong> — soglia avvertimento: superabile temporaneamente per il "periodo di grazia" (default 7 giorni)<br>
+• <strong>hard limit</strong> — muro invalicabile: il kernel rifiuta nuovi dati oltre questo punto<br>
+<br>
+Senza quote, un singolo utente può riempire /home e bloccare tutti gli altri.`,
+    analogy: `Il soft limit è il conto corrente con lo scoperto: puoi andare in rosso, ma hai 7 giorni per rientrare. L'hard limit è il bancomat senza fondi: rifiutato senza appelli. 💳` },
+
+  { type: 'lesson', emoji: '🔧', title: 'Abilitare le quote in 3 passi',
+    text: `<strong>1. /etc/fstab</strong> — aggiungi <code>usrquota</code> e/o <code>grpquota</code> alle opzioni del filesystem:<br>
+<code>UUID=xxx  /home  ext4  defaults,usrquota,grpquota  0 2</code><br>
+<br>
+<strong>2. quotacheck</strong> — crea i file di database (dopo remount):<br>
+<code>quotacheck -cug /home</code> → crea <code>aquota.user</code> e <code>aquota.group</code><br>
+(<code>-c</code> crea, <code>-u</code> utenti, <code>-g</code> gruppi)<br>
+<br>
+<strong>3. quotaon</strong> — attiva il controllo:<br>
+<code>quotaon /home</code> · <code>quotaon -a</code> (tutti i filesystem in fstab)<br>
+Per disabilitare: <code>quotaoff /home</code>`,
+    analogy: `Come aprire un bar con la bilancia: prima installi la bilancia (fstab), poi la calibri (quotacheck), poi la metti in funzione (quotaon). Senza calibrazione = niente controllo. ⚖️` },
+
+  { type: 'lesson', emoji: '✏️', title: 'edquota, repquota, quota',
+    text: `<strong>Impostare i limiti:</strong><br>
+<code>edquota -u alice</code> — apre l'editor per fissare soft/hard limit in KB e in inode<br>
+<code>edquota -g webteam</code> — stessa cosa per un gruppo<br>
+<code>edquota -p alice bob</code> — copia i limiti di alice su bob (prototipo)<br>
+<br>
+<strong>Monitorare:</strong><br>
+<code>quota</code> — mostra la tua quota personale<br>
+<code>quota -u alice</code> — mostra la quota di alice (root)<br>
+<code>repquota /home</code> — rapporto di tutti gli utenti su /home<br>
+<code>repquota -a</code> — rapporto su tutti i filesystem con quota`,
+    analogy: `edquota è il contratto con l'inquilino. repquota è il sopralluogo del padrone casa. quota è il tuo estratto conto. 📊` },
+
+  { type: 'terminal', emoji: '⚖️', title: 'repquota -a: chi sta sforando?',
+    cmd: 'repquota -a',
+    out: `*** Report for user quotas on device /dev/sda3
+Block grace time: 7days; Inode grace time: 7days
+                        Block limits                File limits
+User            used    soft    hard  grace    used  soft  hard  grace
+----------------------------------------------------------------------
+root      --       36       0       0              4     0     0
+alice     --    51200  102400  204800            840  1000  2000
+bob       +-   102400  102400  204800  6days    950  1000  2000
+# -- = nei limiti  ·  +- = superato il soft (grace period attivo)` },
+
+  { type: 'quiz', q: 'Quale opzione in /etc/fstab abilita le quote UTENTE su un filesystem?',
+    opts: ['quota', 'usrquota', 'enable-quota', 'user_quota'],
+    a: 1,
+    explain: `L'opzione corretta è <code><strong>usrquota</strong></code> (per utenti) e <code>grpquota</code> (per gruppi), separate da virgola tra le opzioni di fstab. "quota" da solo non esiste. "quotaon" è il COMANDO per attivare, non un'opzione fstab. ⚖️` },
+
+  { type: 'quiz', q: 'Vuoi impostare limiti di spazio per l\'utente "lore". Quale comando usi?',
+    opts: ['quota -u lore', 'repquota -u lore', 'edquota -u lore', 'quotaon -u lore'],
+    a: 2,
+    explain: `<code>edquota -u lore</code> apre un editor (di solito vi) per modificare i limiti soft/hard di lore. <code>quota -u lore</code> mostra solo i limiti (non li modifica). <code>repquota</code> genera il report di tutti. <code>quotaon</code> attiva l'intero sistema di quote. ✏️` },
+
+  { type: 'quiz', q: 'Cosa crea "quotacheck -cug /home"?',
+    opts: [
+      'Attiva immediatamente le quote su /home',
+      'Crea i file aquota.user e aquota.group in /home',
+      'Mostra un report delle quote su /home',
+      'Cancella i file di quota esistenti',
+    ],
+    a: 1,
+    explain: `<code>-c</code> = crea i file di database, <code>-u</code> = per utenti, <code>-g</code> = per gruppi. Vengono creati <code>aquota.user</code> e <code>aquota.group</code> nella root del filesystem /home. Vanno inizializzati PRIMA di <code>quotaon</code>. 📋` },
+
+  { type: 'quiz', q: 'Differenza tra soft limit e hard limit nelle quote disco:',
+    opts: [
+      'Il soft limit è invalicabile, l\'hard limit si può sforare per un periodo',
+      'Il soft limit si può sforare temporaneamente (grace period), l\'hard limit è invalicabile',
+      'Il soft limit vale per gli utenti, l\'hard limit per i gruppi',
+      'Non c\'è differenza pratica tra i due',
+    ],
+    a: 1,
+    explain: `<strong>Soft limit</strong>: soglia di avvertimento, superabile per il "periodo di grazia" (default 7 giorni) — poi diventa vincolante. <strong>Hard limit</strong>: muro invalicabile — il kernel rifiuta ogni scrittura oltre quel punto immediatamente. 💳` },
+
+  { type: 'quiz', q: 'Qual è il comando per ABILITARE le quote su /home (già configurate in fstab)?',
+    opts: ['quotacheck /home', 'quotaon /home', 'quota -e /home', 'mount -o remount,quota /home'],
+    a: 1,
+    explain: `<code>quotaon /home</code> attiva l'enforcement delle quote. <code>quotaon -a</code> le attiva su tutti i filesystem abilitati in fstab. <code>quotacheck</code> crea/aggiorna il database (passo precedente). Per disabilitare: <code>quotaoff /home</code>. 🔛` },
+
+  { type: 'quiz', q: 'Come visualizzi il report delle quote di TUTTI gli utenti su tutti i filesystem?',
+    opts: ['quota -a', 'repquota -a', 'quotacheck -a', 'edquota -a'],
+    a: 1,
+    explain: `<code>repquota -a</code> = report di tutti i filesystem con quota attiva (-a = all). Mostra ogni utente con spazio usato, soft/hard limit e periodo di grazia. <code>quota -a</code> e <code>edquota -a</code> non esistono con quella sintassi. 📊` },
+
+  { type: 'quiz', q: 'L\'utente bob appare con "+-" nel rapporto di repquota. Cosa significa?',
+    opts: [
+      'Bob è escluso dalle quote (account admin)',
+      'Bob ha superato il soft limit — è nel periodo di grazia',
+      'Bob ha superato l\'hard limit — le scritture sono bloccate',
+      'Bob ha zero byte utilizzati',
+    ],
+    a: 1,
+    explain: `Nel report di repquota: <code>--</code> = nei limiti, <code>+-</code> = ha superato il soft limit (è nel grace period), <code>++</code> = ha superato anche l'hard limit (bloccato). Vedi alice (--) e bob (+-) nell'output sopra. ⏳` },
+
+  { type: 'quiz', q: 'Vuoi applicare gli stessi limiti di alice a bob come prototipo. Comando?',
+    opts: [
+      'edquota -p alice bob',
+      'quota --copy alice bob',
+      'repquota -p alice',
+      'quotacheck --proto alice bob',
+    ],
+    a: 0,
+    explain: `<code>edquota -p alice bob</code> copia i limiti di alice come "prototipo" (<code>-p</code> = prototype) su bob. È il metodo standard per applicare una policy uniforme a più utenti rapidamente. 📋` },
+
+  { type: 'quiz', q: 'Quale file di configurazione va modificato per abilitare le quote all\'avvio?',
+    opts: ['/etc/quota.conf', '/etc/fstab', '/etc/quotaon.d/', '/proc/sys/fs/quota'],
+    a: 1,
+    explain: `Le quote si abilitano aggiungendo <code>usrquota</code> e/o <code>grpquota</code> nella colonna delle opzioni di <strong>/etc/fstab</strong> per il filesystem interessato. Non esiste /etc/quota.conf come file standard. /proc/sys/fs/ è il filesystem virtuale del kernel (sola lettura). 📋` },
+
+  { type: 'quiz', q: 'Qual è il periodo di grazia DEFAULT nelle quote disco Linux?',
+    opts: ['1 giorno', '7 giorni', '30 giorni', 'Illimitato'],
+    a: 1,
+    explain: `Il periodo di grazia predefinito è <strong>7 giorni</strong>. Durante questo tempo l'utente può eccedere il soft limit. Scaduto il periodo, il soft limit diventa vincolante come l'hard limit. Il periodo si modifica con <code>edquota -t</code>. ⏳` },
+
+  { type: 'input', q: 'Scrivi il comando per DISABILITARE le quote su /home:',
+    accept: ['quotaoff /home', 'quotaoff -a', 'sudo quotaoff /home'],
+    placeholder: 'quota...',
+    explain: `<code>quotaoff /home</code> disabilita l'enforcement delle quote su /home. <code>quotaoff -a</code> le disabilita su tutti. I file <code>aquota.user</code> e <code>aquota.group</code> restano intatti — si riattivano con quotaon senza perdere la configurazione. ⚖️` },
+
   // ── 35. Ripasso Lampo ────────────────────────────────────────────────────────
   { type: 'lesson', emoji: '🧩', title: '🧩 RIPASSO LAMPO — Modulo 4',
     text: `• <code>lsblk</code> / <code>fdisk -l</code> → vedi dischi e partizioni<br>
@@ -379,7 +502,8 @@ TRAPPOLA! locate non trova file creati <em>dopo</em> l'ultimo updatedb.`,
 • <code>chmod 755</code> (r=4 w=2 x=1) · SUID=4000 SGID=2000 Sticky=1000<br>
 • <code>chown user:grp file</code> · <code>chown -R</code> per directory<br>
 • <code>ln</code> hard link (stesso inode, stesso fs) · <code>ln -s</code> soft link<br>
-• <code>find / -name x -type f</code> → cerca ora · <code>locate x</code> → cerca nel DB (updatedb)` },
+• <code>find / -name x -type f</code> → cerca ora · <code>locate x</code> → cerca nel DB (updatedb)<br>
+• <strong>Quote (104.4)</strong>: <code>usrquota/grpquota</code> in fstab → <code>quotacheck -cug</code> → <code>quotaon</code> · <code>edquota -u</code> imposta · <code>repquota -a</code> report` },
 
   // ── 36. Quiz finale 1: fstab ─────────────────────────────────────────────────
   { type: 'quiz', q: 'L\'utente vuole che /dev/sdc1 sia montato su /data ad ogni avvio. Cosa modifica?',
