@@ -250,6 +250,7 @@ function renderHome() {
     el.className = 'module-card' + (prog.done ? ' done' : '') + (locked ? ' locked' : '');
     const hasCS = typeof CHEATSHEETS !== 'undefined' && !!CHEATSHEETS[mod.id];
     const flashCount = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact').length;
+    const drillCount = mod.cards.filter(c => c.type === 'quiz' || c.type === 'input').length;
     el.innerHTML = `
       <div class="module-icon">${mod.icon}</div>
       <div class="module-meta">
@@ -259,23 +260,21 @@ function renderHome() {
       </div>
       <div class="module-badge-area">
         <div class="module-badge">${prog.done ? '🏆' : pct > 0 ? pct + '%' : ''}</div>
-        ${!locked && flashCount > 0 ? `<button class="btn-cheatsheet">📖 flash</button>` : ''}
-        ${hasCS && !locked ? `<button class="btn-cheatsheet">📄 cheat</button>` : ''}
+        ${!locked && flashCount > 0 ? `<button class="btn-cheatsheet" data-action="flash">📖 flash</button>` : ''}
+        ${!locked && drillCount > 0 ? `<button class="btn-cheatsheet" data-action="drill">🎯 quiz</button>` : ''}
+        ${hasCS && !locked ? `<button class="btn-cheatsheet" data-action="cheat">📄 cheat</button>` : ''}
       </div>`;
     if (!locked) {
       el.onclick = () => openModule(mod);
-      if (flashCount > 0) {
-        el.querySelector('.btn-cheatsheet').addEventListener('click', e => {
+      el.querySelectorAll('.btn-cheatsheet').forEach(btn => {
+        btn.addEventListener('click', e => {
           e.stopPropagation();
-          openFlash(mod);
+          const action = btn.dataset.action;
+          if (action === 'flash') openFlash(mod);
+          else if (action === 'drill') openQuizDrill(mod);
+          else if (action === 'cheat') openCheatsheet(mod);
         });
-      }
-      if (hasCS) {
-        el.querySelectorAll('.btn-cheatsheet')[flashCount > 0 ? 1 : 0]?.addEventListener('click', e => {
-          e.stopPropagation();
-          openCheatsheet(mod);
-        });
-      }
+      });
     }
     list.appendChild(el);
   });
@@ -291,8 +290,11 @@ let examAnswers = [];
 let examTimerSec = 0;
 let examTimerInterval = null;
 let flashMode = false;
+let quizDrillMode = false;
 
 function openModule(mod) {
+  $('searchInput').value = '';
+  clearSearch();
   curMod = mod;
   reviewMode = false;
   state.modules[mod.id] = state.modules[mod.id] || { card: 0, done: false, quizOk: 0, quizTot: 0 };
@@ -336,9 +338,19 @@ function openFlash(mod) {
   const flashCards = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact');
   if (!flashCards.length) return;
   curMod = { ...mod, cards: flashCards };
-  reviewMode = false;
-  examMode = false;
-  flashMode = true;
+  reviewMode = false; examMode = false; flashMode = true; quizDrillMode = false;
+  homeEl.classList.add('hidden');
+  feedEl.classList.remove('hidden');
+  renderCards(curMod);
+  renderFeedXp();
+}
+
+function openQuizDrill(mod) {
+  const drillCards = mod.cards.filter(c => c.type === 'quiz' || c.type === 'input');
+  if (!drillCards.length) return;
+  curMod = { ...mod, cards: drillCards };
+  reviewMode = false; examMode = false; flashMode = false; quizDrillMode = true;
+  drillCorrect = 0; drillTotal = 0;
   homeEl.classList.add('hidden');
   feedEl.classList.remove('hidden');
   renderCards(curMod);
@@ -354,6 +366,7 @@ function exitFeed() {
   examAnswers = [];
   examTimerSec = 0;
   flashMode = false;
+  quizDrillMode = false;
   feedEl.classList.add('hidden');
   homeEl.classList.remove('hidden');
   renderHome();
@@ -390,7 +403,7 @@ function onFeedScroll() {
   scrollT = setTimeout(() => {
     const i = cardIndex();
     updateFeedProgress(i);
-    if (!reviewMode && !examMode && !flashMode) {
+    if (!reviewMode && !examMode && !flashMode && !quizDrillMode) {
       const prog = state.modules[curMod.id];
       if (i > (prog.card || 0) && !prog.done) { prog.card = i; saveState(); }
       // XP lettura per card non-quiz mai viste
@@ -418,7 +431,9 @@ function buildCard(mod, c, i) {
     ? `<div class="card-kicker exam-kicker">📋 ${curMod.title} · ${i + 1}/${mod.cards.length}</div>`
     : flashMode
       ? `<div class="card-kicker flash-kicker">📖 ${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`
-      : `<div class="card-kicker">${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`;
+      : quizDrillMode
+        ? `<div class="card-kicker drill-kicker">🎯 ${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`
+        : `<div class="card-kicker">${mod.icon} ${mod.title} · ${i + 1}/${mod.cards.length}</div>`;
 
   if (c.type === 'lesson') {
     el.innerHTML = `${kicker}
@@ -472,7 +487,9 @@ function buildCard(mod, c, i) {
         ? () => answerExamQuiz(i, c, oi, box, zone)
         : reviewMode
           ? () => answerReviewQuiz(i, c, oi, box, zone)
-          : () => answerQuiz(mod, c, i, oi, box, zone);
+          : quizDrillMode
+            ? () => answerDrillQuiz(c, oi, box, zone)
+            : () => answerQuiz(mod, c, i, oi, box, zone);
       box.appendChild(b);
     });
   }
@@ -529,7 +546,9 @@ function buildCard(mod, c, i) {
       ? () => answerExamInput(i, c, inp, btn, zone)
       : reviewMode
         ? () => answerReviewInput(i, c, inp, btn, zone)
-        : () => answerInput(mod, c, i, inp, btn, zone);
+        : quizDrillMode
+          ? () => answerDrillInput(c, inp, btn, zone)
+          : () => answerInput(mod, c, i, inp, btn, zone);
     btn.onclick = submit;
     inp.onkeydown = e => { if (e.key === 'Enter') submit(); };
   }
@@ -637,6 +656,36 @@ function answerReviewInput(reviewIdx, c, inp, btn, zone) {
     <div class="quiz-explain">${c.explain}</div>`;
 }
 
+// ── Quiz Drill (CP14) ────────────────────────────────────────────────────────
+let drillCorrect = 0, drillTotal = 0;
+
+function answerDrillQuiz(c, chosen, box, zone) {
+  const btns = [...box.children];
+  btns.forEach(b => b.disabled = true);
+  const ok = chosen === c.a;
+  btns[c.a].classList.add('correct');
+  if (!ok) btns[chosen].classList.add('wrong');
+  drillTotal++;
+  if (ok) drillCorrect++;
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    <div class="quiz-explain">${c.explain}</div>`;
+}
+
+function answerDrillInput(c, inp, btn, zone) {
+  const given = normAnswer(inp.value);
+  if (!given) { inp.focus(); return; }
+  const ok = c.accept.some(a => normAnswer(a) === given);
+  inp.disabled = true; btn.disabled = true;
+  inp.classList.add(ok ? 'correct' : 'wrong');
+  drillTotal++;
+  if (ok) drillCorrect++;
+  zone.innerHTML = `
+    <div class="quiz-result ${ok ? 'ok' : 'ko'}">${ok ? pick(PRAISE) : pick(ROAST)}</div>
+    ${ok ? '' : `<div class="input-answer">La risposta era: <code>${c.accept[0]}</code></div>`}
+    <div class="quiz-explain">${c.explain}</div>`;
+}
+
 function buildFinale(mod) {
   const el = document.createElement('div');
   el.className = 'card finale';
@@ -647,6 +696,19 @@ function buildFinale(mod) {
       <div class="card-title">Fine delle flashcard!</div>
       <div class="card-text">Hai rivisto <strong>${mod.cards.length}</strong> lezioni e fun fact.<br>Ora torna al feed completo per fare i quiz! 🎯</div>
       <div class="flash-finale-tip">Modalità ripasso: nessun XP, nessun progresso salvato. Per guadagnare XP usa il feed normale.</div>
+      <button class="btn-big" style="margin-top:1.2rem">Torna al Dojo 🐧</button>`;
+    el.querySelector('.btn-big').onclick = exitFeed;
+    return el;
+  }
+
+  if (quizDrillMode) {
+    const pct = drillTotal ? Math.round(drillCorrect / drillTotal * 100) : 0;
+    el.innerHTML = `
+      <div class="card-emoji">🎯</div>
+      <div class="card-title">Sessione drill completata!</div>
+      <div class="card-text">Corrette: <strong>${drillCorrect} / ${drillTotal}</strong> — precisione <strong>${pct}%</strong><br>
+        ${pct >= 80 ? '🔥 Ottimo! Sei pronto per l\'esame su questo modulo.' : pct >= 60 ? '💪 Buono! Ripassaci ancora per consolidare.' : '📖 Continua a studiare, andrà meglio!'}</div>
+      <div class="drill-finale-tip">Modalità drill: nessun XP assegnato. Per avanzare nel modulo usa il feed normale.</div>
       <button class="btn-big" style="margin-top:1.2rem">Torna al Dojo 🐧</button>`;
     el.querySelector('.btn-big').onclick = exitFeed;
     return el;
@@ -853,7 +915,82 @@ function tick() {
   rafId = parts.length ? requestAnimationFrame(tick) : null;
 }
 
+// ── Ricerca globale (CP14) ────────────────────────────────────────────────────
+function openModuleAt(modId, cardIdx) {
+  const mod = MODULES.find(m => m.id === modId);
+  if (!mod) return;
+  clearSearch();
+  $('searchInput').value = '';
+  curMod = mod;
+  reviewMode = false; examMode = false; flashMode = false; quizDrillMode = false;
+  state.modules[mod.id] = state.modules[mod.id] || { card: 0, done: false, quizOk: 0, quizTot: 0 };
+  homeEl.classList.add('hidden');
+  feedEl.classList.remove('hidden');
+  renderCards(mod);
+  renderFeedXp();
+  requestAnimationFrame(() => {
+    cardsEl.scrollTo({ top: cardIdx * cardsEl.clientHeight, behavior: 'instant' });
+  });
+}
+
+function clearSearch() {
+  $('searchResults').classList.add('hidden');
+  $('searchResults').innerHTML = '';
+  $('moduleList').classList.remove('hidden');
+}
+
+function doSearch(query) {
+  const q = query.trim().toLowerCase();
+  if (!q) { clearSearch(); return; }
+
+  const results = [];
+  for (const mod of MODULES) {
+    mod.cards.forEach((c, idx) => {
+      const haystack = [c.title, c.q, c.text, c.analogy, c.cmd, c.out]
+        .filter(Boolean).join(' ').toLowerCase();
+      if (haystack.includes(q)) {
+        results.push({ mod, c, idx });
+      }
+    });
+  }
+
+  $('moduleList').classList.add('hidden');
+  const resEl = $('searchResults');
+  resEl.classList.remove('hidden');
+
+  if (!results.length) {
+    resEl.innerHTML = `<div class="search-empty">Nessun risultato per "<strong>${query}</strong>"</div>`;
+    return;
+  }
+
+  const typeLabel = { lesson: 'lezione', fact: 'fun fact', terminal: 'terminale', quiz: 'quiz', input: 'risposta', mission: 'missione' };
+  resEl.innerHTML = results.slice(0, 30).map(({ mod, c, idx }) => {
+    const title = c.title || c.q || '—';
+    const type = c.type || 'lesson';
+    return `<div class="search-result" data-mod="${mod.id}" data-idx="${idx}">
+      <div class="sr-mod">${mod.icon} ${mod.title}</div>
+      <div class="sr-title">${title}</div>
+      <span class="sr-type ${type}">${typeLabel[type] || type}</span>
+    </div>`;
+  }).join('') + (results.length > 30 ? `<div class="search-empty">…e altri ${results.length - 30} risultati. Affina la ricerca.</div>` : '');
+
+  resEl.querySelectorAll('.search-result').forEach(el => {
+    el.addEventListener('click', () => {
+      openModuleAt(el.dataset.mod, parseInt(el.dataset.idx, 10));
+    });
+  });
+}
+
+let searchDebounce = null;
+function setupSearch() {
+  $('searchInput').addEventListener('input', e => {
+    clearTimeout(searchDebounce);
+    searchDebounce = setTimeout(() => doSearch(e.target.value), 180);
+  });
+}
+
 // ── Avvio ────────────────────────────────────────────────────────────────────
 $('btnExit').onclick = exitFeed;
 initTheme();
+setupSearch();
 renderHome();

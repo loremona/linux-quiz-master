@@ -90,6 +90,47 @@ body {
 .module-progress-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 999px; }
 .module-badge { font-size: 1.3rem; }
 
+/* ═══════════ Ricerca globale ═══════════ */
+.search-wrap { position: relative; margin-bottom: 14px; }
+.search-input {
+  width: 100%; background: var(--bg2); border: 1px solid #2a3160;
+  border-radius: 14px; padding: 11px 14px 11px 40px;
+  color: var(--text); font-size: .92rem; outline: none;
+  transition: border-color .2s;
+}
+.search-input:focus { border-color: var(--accent); }
+.search-input::placeholder { color: var(--muted); }
+body.light-theme .search-input { background: #fff; border-color: #c8ccee; }
+.search-icon {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: var(--muted); font-size: .95rem; pointer-events: none;
+}
+.search-results { margin-bottom: 8px; }
+.search-result {
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--bg2); border: 1px solid #2a3160; border-radius: 12px;
+  padding: 10px 13px; margin-bottom: 6px; cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+.search-result:hover, .search-result:active { border-color: var(--accent); background: rgba(124,92,255,.08); }
+body.light-theme .search-result { background: #fff; border-color: #c8ccee; }
+.sr-mod { font-size: .7rem; color: var(--muted); }
+.sr-title { font-size: .88rem; font-weight: 700; }
+.sr-type { display: inline-block; font-size: .65rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase;
+  border-radius: 5px; padding: 1px 6px; background: rgba(124,92,255,.15); color: var(--accent); margin-top: 2px; }
+.sr-type.quiz { background: rgba(255,77,109,.12); color: var(--danger); }
+.sr-type.input { background: rgba(0,229,160,.12); color: var(--accent2); }
+.sr-type.mission { background: rgba(255,200,61,.15); color: var(--gold); }
+.search-empty { color: var(--muted); font-size: .88rem; padding: 10px 0; text-align: center; }
+
+/* ═══════════ Quiz drill mode ═══════════ */
+.drill-kicker { color: var(--danger) !important; }
+.drill-finale-tip {
+  margin-top: 1rem; padding: 10px 14px;
+  background: rgba(255,77,109,.07); border: 1px dashed rgba(255,77,109,.3);
+  border-radius: 12px; font-size: .85rem; color: var(--danger);
+}
+
 .home-footer { text-align: center; color: #3d4470; font-size: .75rem; margin-top: 34px; }
 
 /* mazzo ripasso errori (CP4) */
