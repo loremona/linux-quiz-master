@@ -343,6 +343,57 @@ Quando cloni una VM: <code>systemd-machine-id-setup</code> rigenera l'ID.`,
   a: 0,
   explain: `KVM è un modulo del kernel Linux (<code>kvm.ko</code>): questo fa sì che il kernel stesso diventi l'hypervisor, quindi è <strong>Tipo 1</strong>. VirtualBox è Tipo 2 (gira sopra un OS). Xen è Tipo 1 (con le VM Linux che girano senza kernel modificato: HVM). 🖥️` },
 
+// ── 102.6 extra: tipi di VM e guest driver ──────────────────────────────────
+{ type: 'lesson', emoji: '🔬', title: 'Tipi di VM: HVM, PVM e ibrida',
+  text: `Esistono tre modi in cui un guest può girare su un hypervisor:<br>
+<br>
+<strong>Completamente virtualizzata (HVM — Hardware Virtual Machine)</strong><br>
+Il guest NON sa di essere una VM: vede hardware finto uguale a quello reale. Richiede le estensioni CPU <code>Intel VT-x</code> o <code>AMD-V</code> abilitate nel BIOS/UEFI.<br>
+<br>
+<strong>Paravirtualizzata (PVM)</strong><br>
+Il guest SA di essere una VM e usa <em>guest driver</em> speciali per comunicare direttamente con l'hypervisor. Più veloce (I/O migliore), ma richiede un kernel modificato nel guest.<br>
+<br>
+<strong>Ibrida (HVM + driver paravirtualizzati)</strong><br>
+Il meglio dei due mondi: il guest non è modificato (come HVM) ma usa driver paravirtualizzati (<code>virtio</code>) per I/O ad alte prestazioni.`,
+  analogy: `HVM = turista che parla con il traduttore (l'hypervisor). PVM = residente locale che parla direttamente con i servizi. Ibrido = turista con l'app del traduttore ottimizzata: capisce tutto e va veloce. 🔬` },
+
+{ type: 'lesson', emoji: '💾', title: 'Immagini disco VM: qcow2 e raw',
+  text: `Una VM usa file immagine per il suo disco. Due formati principali:<br>
+<br>
+<strong>COW / qcow2</strong> (Copy-On-Write, <em>thin provisioning</em>):<br>
+• Il file cresce solo quando si scrivono dati: un'immagine da 20 GB ne occupa 5 sul disco reale<br>
+• Formato QEMU/KVM: <code>qcow2</code> — supporta snapshot, compressione, cifratura<br>
+• <code>/var/lib/libvirt/images/</code> è dove KVM le salva di default<br>
+<br>
+<strong>RAW</strong> (<em>full provisioning</em>):<br>
+• Spazio pre-allocato tutto subito: immagine da 20 GB → occupa 20 GB<br>
+• Più veloce in I/O (nessun overhead di gestione), più semplice da recuperare<br>
+<br>
+<strong>Guest driver Virtio</strong>: i driver paravirtualizzati di KVM per rete e storage. Nel XML della VM: <code>model type='virtio'</code>. Molto più veloci dei driver emulati "reali".`,
+  analogy: `qcow2 è come un pallone da calcio gonfiabile: lo acquisti piccolo e lo gonfi man mano. RAW è il pallone già gonfio al massimo: prende posto ma è pronto subito. 💾` },
+
+{ type: 'quiz',
+  q: 'Una VM KVM richiede "Intel VT-x" o "AMD-V" abilitato nel BIOS. A quale tipo di virtualizzazione serve?',
+  opts: [
+    'HVM (completamente virtualizzata)',
+    'PVM (paravirtualizzata)',
+    'Container Linux',
+    'Ibrida (bastano i guest driver)'
+  ],
+  a: 0,
+  explain: `Le estensioni CPU <code>VT-x</code> (Intel) e <code>AMD-V</code> (AMD) abilitano la virtualizzazione hardware: permettono all'hypervisor di eseguire istruzioni guest direttamente sulla CPU fisica senza traduzione. Questo è il requisito delle VM <strong>HVM</strong>. La PVM usa un kernel modificato e non richiede queste estensioni. 🔬` },
+
+{ type: 'quiz',
+  q: 'Qual è la differenza tra un\'immagine disco qcow2 e una raw per una VM KVM?',
+  opts: [
+    'qcow2 è thin-provisioned (cresce a richiesta); raw è pre-allocata tutta subito',
+    'raw supporta gli snapshot; qcow2 no',
+    'qcow2 è solo per VirtualBox; raw è per KVM',
+    'raw è più lenta perché deve comprimere i dati'
+  ],
+  a: 0,
+  explain: `<code>qcow2</code> (Copy-On-Write) alloca spazio sul disco reale solo quando viene scritto: un disco virtuale da 20 GB può occupare 5 GB. <code>raw</code> pre-alloca tutto subito: più veloce in I/O, ma occupa l'intero spazio dichiarato. qcow2 supporta snapshot e compressione, raw no. 💾` },
+
 { type: 'fact', emoji: '😱', title: 'rm -rf giù dal palco',
   text: `Nel mondo dei pacchetti la regola d'oro è: <strong>mai mischiare i dialetti</strong>. Installare .deb su Arch o forzare .rpm su Ubuntu con conversioni strane = sistema zombie. 🧟<br><br>Ogni distro ha il suo gestore, e il gestore deve sapere TUTTO quello che è installato. Se gli installi roba alle spalle, perde il controllo e agli aggiornamenti succede il patatrac.` },
 
@@ -355,7 +406,8 @@ Quando cloni una VM: <code>systemd-machine-id-setup</code> rigenera l'ID.`,
   📚 Librerie .so: ldd mostra, ldconfig aggiorna la cache<br>
   🛒 pacman (-Syu!) · dpkg/apt · rpm/dnf<br>
   👻 Container = kernel condiviso · VM = kernel proprio<br>
-  🖥️ Hypervisor Tipo 1 (KVM, Xen) = bare-metal · Tipo 2 (VirtualBox) = hosted<br><br>
+  🖥️ Hypervisor Tipo 1 (KVM, Xen) = bare-metal · Tipo 2 (VirtualBox) = hosted<br>
+  🔬 HVM = VT-x/AMD-V richiesto · PVM = guest driver · qcow2 = thin, raw = pre-allocata<br><br>
   Ultimi 2 quiz e hai chiuso anche questo. 🔥`,
   analogy: null },
 
