@@ -309,6 +309,40 @@ Total Download Size:   312.44 MiB
   a: 1,
   explain: `Il <strong>container condivide il kernel dell'host</strong> (per questo è leggero e parte in millisecondi). La VM emula un computer intero con il SUO kernel (più pesante ma più isolata). Casa completa vs stanza in affitto. 👻` },
 
+// ── 102.6 extra: hypervisor tipo 1 vs tipo 2 ────────────────────────────────
+{ type: 'lesson', emoji: '🖥️', title: 'Hypervisor Tipo 1 vs Tipo 2',
+  text: `Un <strong>hypervisor</strong> è il software che crea e gestisce le macchine virtuali.<br>
+<br>
+<strong>Tipo 1 — Bare-metal</strong> (gira direttamente sull'hardware):<br>
+• <code>KVM</code> (Kernel-based Virtual Machine) — integrato nel kernel Linux<br>
+• <code>Xen</code> — usato da AWS, Citrix<br>
+• VMware ESXi, Microsoft Hyper-V<br>
+Più performante: nessun OS intermedio tra hardware e VM.<br>
+<br>
+<strong>Tipo 2 — Hosted</strong> (gira su un OS normale):<br>
+• <code>VirtualBox</code> · VMware Workstation · QEMU<br>
+Più comodo per sviluppo locale: installi come un'app normale.<br>
+<br>
+<strong>KVM su Linux</strong>:<br>
+<code>lsmod | grep kvm</code> — verifica se KVM è caricato<br>
+<code>virsh list --all</code> — lista VM (via libvirt)<br>
+<code>virt-manager</code> — GUI per gestire VM KVM<br>
+<br>
+<strong>/etc/machine-id</strong> — identificativo unico della macchina (128 bit).<br>
+Quando cloni una VM: <code>systemd-machine-id-setup</code> rigenera l'ID.`,
+  analogy: `Tipo 1 è il direttore che lavora direttamente in fabbrica. Tipo 2 è il consulente che lavora dall'ufficio del cliente: ci riesce, ma ha uno strato in più di burocrazia tra lui e i macchinari. 🏭` },
+
+{ type: 'quiz',
+  q: 'KVM (Kernel-based Virtual Machine) è un hypervisor di quale tipo?',
+  opts: [
+    'Tipo 1 (bare-metal): usa il kernel Linux come hypervisor',
+    'Tipo 2 (hosted): gira sopra il kernel Linux come applicazione',
+    'Tipo 3 (paravirtualization): richiede kernel modificato',
+    'Non è un hypervisor, è un emulatore'
+  ],
+  a: 0,
+  explain: `KVM è un modulo del kernel Linux (<code>kvm.ko</code>): questo fa sì che il kernel stesso diventi l'hypervisor, quindi è <strong>Tipo 1</strong>. VirtualBox è Tipo 2 (gira sopra un OS). Xen è Tipo 1 (con le VM Linux che girano senza kernel modificato: HVM). 🖥️` },
+
 { type: 'fact', emoji: '😱', title: 'rm -rf giù dal palco',
   text: `Nel mondo dei pacchetti la regola d'oro è: <strong>mai mischiare i dialetti</strong>. Installare .deb su Arch o forzare .rpm su Ubuntu con conversioni strane = sistema zombie. 🧟<br><br>Ogni distro ha il suo gestore, e il gestore deve sapere TUTTO quello che è installato. Se gli installi roba alle spalle, perde il controllo e agli aggiornamenti succede il patatrac.` },
 
@@ -320,7 +354,8 @@ Total Download Size:   312.44 MiB
   🍞 grub-install installa, grub-mkconfig genera il menu<br>
   📚 Librerie .so: ldd mostra, ldconfig aggiorna la cache<br>
   🛒 pacman (-Syu!) · dpkg/apt · rpm/dnf<br>
-  👻 Container = kernel condiviso, VM = kernel proprio<br><br>
+  👻 Container = kernel condiviso · VM = kernel proprio<br>
+  🖥️ Hypervisor Tipo 1 (KVM, Xen) = bare-metal · Tipo 2 (VirtualBox) = hosted<br><br>
   Ultimi 2 quiz e hai chiuso anche questo. 🔥`,
   analogy: null },
 
