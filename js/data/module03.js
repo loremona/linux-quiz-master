@@ -439,7 +439,9 @@ TRAPPOLA! screen usa <code>Ctrl+a</code>, tmux usa <code>Ctrl+b</code>. Non conf
   📄 Here doc: <code>&lt;&lt;EOF...EOF</code> stdin multi-riga · Here string: <code>&lt;&lt;&lt; "stringa"</code><br>
   ✂️ <code>sed 's/x/y/g'</code> · <code>-i</code> in-place · <code>-n '/p/p'</code> filtra · <code>'/^#/d'</code> cancella<br>
   🖥️ screen: <code>-S nome -ls -r</code> · Ctrl+a = prefisso · tmux: <code>new -s -ls attach -t</code> · Ctrl+b = prefisso<br>
-  📝 vi: <code>i</code> scrivi, Esc, <code>:wq</code> salva ed esci<br><br>
+  📝 vi: <code>i</code> scrivi, Esc, <code>:wq</code> salva ed esci<br>
+  📖 <code>man cmd</code> · <code>apropos parola</code> cerca nelle man · <code>type cmd</code> = builtin/binary/alias · <code>which cmd</code> = percorso<br>
+  ⏱️ <code>history</code> · <code>!NUM</code> riesegui · <code>!!</code> ultimo · quote: <code>'</code>=letterale <code>"</code>=espande <code>\</code>=escape<br><br>
   Due quiz finali e il modulo è tuo. 🔥`,
   analogy: null },
 
@@ -464,5 +466,58 @@ TRAPPOLA! screen usa <code>Ctrl+a</code>, tmux usa <code>Ctrl+b</code>. Non conf
   ],
   a: 0,
   explain: `La shell è l'ULTIMO campo di /etc/passwd, quindi regex <code>bash$</code> (finisce per bash), poi <code>wc -l</code> conta le righe. <code>^bash</code> cercherebbe all'inizio riga, <code>wc -c</code> conta byte, find cerca FILE non testo, e <code>&gt;</code> non incatena comandi: quello è il lavoro della pipe. 🔗` },
+
+// ── 103.1 extra: man/apropos/type/which/history/quoting ──────────────────────
+{ type: 'lesson', emoji: '📖', title: 'man, apropos, type, which: trovare aiuto',
+  text: `<strong>Documentazione sui comandi:</strong><br>
+<code>man ls</code> — apre la pagina di manuale (q = esci, / = cerca)<br>
+<code>man -k parola</code> — cerca tra tutte le man page per parola chiave<br>
+<code>apropos parola</code> — identico a man -k (cerca per descrizione)<br>
+<br>
+<strong>Dove vive un comando?</strong><br>
+<code>which ls</code> — stampa il percorso assoluto: <code>/usr/bin/ls</code><br>
+<code>type ls</code> — dice il TIPO: binary, alias, builtin, function, hashed<br>
+Es: <code>type kill</code> → <em>kill is a shell builtin</em><br>
+Es: <code>type cp</code> → <em>cp is /usr/bin/cp</em><br>
+<br>
+TRAPPOLA! <code>which kill</code> restituisce vuoto (è builtin, non un file) — solo <code>type</code> lo sa.`,
+  analogy: `man è la libreria, apropos è il motore di ricerca. which ti dice in quale scaffale sta il libro, type ti dice se il libro è fisico (binary) o se esiste solo in testa alla bibliotecaria (builtin). 📖` },
+
+{ type: 'lesson', emoji: '⏱️', title: 'history: i comandi che hai già fatto',
+  text: `<code>history</code> — elenca i comandi eseguiti con numero progressivo<br>
+<code>history 20</code> — solo gli ultimi 20<br>
+<code>!315</code> — riesegue il comando numero 315<br>
+<code>!!</code> — riesegue l'ULTIMO comando (utile: <code>sudo !!</code>)<br>
+<code>!ls</code> — riesegue l'ultimo comando che inizia con "ls"<br>
+<code>history | grep ssh</code> — trova tutti i comandi SSH usati<br>
+Salvato in: <code>~/.bash_history</code> (scritto all'uscita della sessione)<br>
+<br>
+<strong>Virgolettato (quoting):</strong><br>
+<code>'single'</code> — tutto letterale, nessuna espansione (<code>$VAR</code> NON espansa)<br>
+<code>"double"</code> — espande <code>$VAR</code>, backtick, <code>\</code><br>
+<code>\</code> — escape di un singolo carattere (<code>my\ file</code> = file con spazio)`,
+  analogy: `history è il tuo quaderno degli appunti automatico. !! è la gomma da cancellare che riscrive l'ultima cosa. Single quote è una bolla trasparente: niente può entrare ad espandersi dentro. ⏱️` },
+
+{ type: 'quiz',
+  q: 'Vuoi sapere se "kill" è un comando esterno o una funzione builtin della shell. Quale comando usi?',
+  opts: [
+    'type kill',
+    'which kill',
+    'man kill',
+    'apropos kill'
+  ],
+  a: 0,
+  explain: `<code>type kill</code> risponde "kill is a shell builtin" — ti dice il tipo del comando. <code>which kill</code> cerca solo i file eseguibili nel PATH e stampa niente per i builtin. <code>man</code> e <code>apropos</code> danno documentazione, non il tipo. 📖` },
+
+{ type: 'quiz',
+  q: 'Cosa stampa: echo \'Il prezzo è $PREZZO\' (con virgolette SINGOLE)?',
+  opts: [
+    'Il prezzo è $PREZZO  (letterale, $ non espanso)',
+    'Il prezzo è 0  (PREZZO non definita → 0)',
+    'Il prezzo è   (PREZZO non definita → stringa vuota)',
+    'Errore di sintassi'
+  ],
+  a: 0,
+  explain: `Le <strong>virgolette singole</strong> rendono tutto letterale: <code>$PREZZO</code> NON viene espanso. Stampa esattamente <code>Il prezzo è $PREZZO</code>. Con le doppie virgolette <code>"$PREZZO"</code> verrebbe espanso (stamperebbe il valore o stringa vuota se non definita). ⏱️` },
 
 ];
