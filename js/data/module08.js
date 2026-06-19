@@ -294,6 +294,28 @@ A1B2C3D4E5F     478 Wed Jun 17 14:10:01  lore@cachyos
     a: 0,
     explain: `<code>newaliases</code> ricompila /etc/aliases → /etc/aliases.db. Senza questo passaggio, l'MTA non vede la modifica. <code>sendmail -bi</code> è un modo equivalente (inizializza il database), ma newaliases è lo standard e quello che l'esame chiede. 📮` },
 
+  // ── 22b. ~/.forward: inoltro posta per utente ────────────────────────────────
+  { type: 'lesson', emoji: '✉️', title: '~/.forward: ridirigi la tua posta',
+    text: `<code>~/.forward</code> è un file nella home dell'utente che dice all'MTA dove inviare la posta destinata a quell'utente.<br>
+<br>
+Contiene una sola riga con il destinatario (o più destinatari separati da virgola):<br>
+<code>echo "lore@gmail.com" > ~/.forward</code> — inoltra tutta la posta a Gmail<br>
+<code>echo "lore@gmail.com, admin@work.com" > ~/.forward</code> — inoltra a più indirizzi<br>
+<code>echo "\\lore, lore@gmail.com" > ~/.forward</code> — copia locale + inoltro (il \\ mantiene la copia)<br>
+<br>
+TRAPPOLA! La <strong>differenza tra ~/.forward e /etc/aliases</strong>:<br>
+• <code>/etc/aliases</code> — gestito da root, vale per tutto il sistema, richiede <code>newaliases</code><br>
+• <code>~/.forward</code> — gestito dall'utente stesso nella propria home, effettivo immediatamente<br>
+<br>
+TRAPPOLA! Il <code>\\</code> prima del nome in ~/.forward è essenziale: senza di esso l'inoltro crea un loop se <code>lore</code> è anche destinatario.`,
+    analogy: `~/.forward è come "l'inoltro automatico" di Gmail che ogni utente imposta da solo — senza bisogno di chiedere all'amministratore di sistema (che invece gestisce /etc/aliases).` },
+
+  // ── 22c. Quiz: ~/.forward vs /etc/aliases ────────────────────────────────────
+  { type: 'quiz', q: 'Quale file permette a un utente di reindirizzare la propria posta senza coinvolgere root?',
+    opts: ['~/.forward', '/etc/aliases', '/etc/mail/forward', '/etc/postfix/virtual'],
+    a: 0,
+    explain: `<code>~/.forward</code> è nella home dell'utente e può essere modificato senza privilegi di root. L'MTA lo legge automaticamente. <code>/etc/aliases</code> richiede root e il comando <code>newaliases</code> per aggiornare il database. <code>/etc/postfix/virtual</code> è una funzionalità avanzata di Postfix per domini virtuali. ✉️` },
+
   // ── 23. CUPS ──────────────────────────────────────────────────────────────────
   { type: 'lesson', emoji: '🖨️', title: 'CUPS: stampa in Linux',
     text: `<strong>CUPS</strong> (Common Unix Printing System) è il sistema di stampa standard di Linux (e macOS).<br>
@@ -350,6 +372,7 @@ Rank    Owner   Job  Files                Total Size
 • Debian: syslog + auth.log · RHEL: messages + secure<br>
 • logrotate: rotate N, compress, daily/weekly, <code>logrotate -f</code><br>
 • <code>newaliases</code> dopo ogni modifica a /etc/aliases (ricompila aliases.db!)<br>
+• <code>~/.forward</code> — inoltro posta per utente senza root · <code>\\utente</code> mantiene copia locale<br>
 • <code>mailq</code> coda · CUPS: <code>lp</code> stampa · <code>lpstat -p</code> · <code>lpq</code> coda · <code>lprm N</code> cancella` },
 
   // ── 29. Quiz: finale hwclock ──────────────────────────────────────────────────
