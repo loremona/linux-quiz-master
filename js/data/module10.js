@@ -600,7 +600,10 @@ Il salt è diverso per ogni utente: anche se due utenti hanno la stessa password
 • SSH: chiave pubblica → authorized_keys sul server · <code>ssh-keygen -t ed25519</code><br>
 • <code>PermitRootLogin no</code> in sshd_config · <code>PasswordAuthentication no</code><br>
 • SSH tunnels: <code>-L</code> local · <code>-R</code> remote · <code>-D</code> SOCKS proxy · <code>-N</code> no command<br>
-• GPG: <code>--encrypt --recipient</code> cifra · <code>--sign</code> firma · <code>--verify</code> verifica · <code>--decrypt</code>` },
+• GPG: <code>--encrypt --recipient</code> cifra · <code>--sign</code> firma · <code>--verify</code> verifica · <code>--decrypt</code><br>
+• <code>nmap -p 80-443 host</code> scansiona porte · <code>nmap -p- localhost</code> tutte · <code>nmap -sn 192.168.1.0/24</code> host attivi<br>
+• <code>lsof -i:22</code> chi usa porta 22 · <code>lsof -i@host:port</code> connessioni specifiche<br>
+• <code>fuser -vn tcp 80</code> processo sulla porta 80 · <code>fuser -k 80/tcp</code> killalo` },
 
   // ── 33. Quiz: SUID vs SGID ────────────────────────────────────────────────────
   { type: 'quiz', q: 'Hai una directory /srv/team con SGID impostato, gruppo "devs". Cosa succede ai file creati lì dentro?',
@@ -679,6 +682,71 @@ Host mioserver
 EOF
 chmod 600 ~/.ssh/config
 ssh mioserver` },
+
+  // ── 38. nmap: scansione porte ─────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🗺️', title: 'nmap: esplora la rete e scansiona le porte',
+    text: `<strong>nmap</strong> è lo strumento standard per la scansione delle porte e la ricognizione di rete.<br>
+<br>
+<strong>Scansioni di base:</strong><br>
+<code>nmap 192.168.1.1</code> — scansiona le 1000 porte TCP più comuni<br>
+<code>nmap -p 80-443 192.168.1.55</code> — scansiona porte da 80 a 443<br>
+<code>nmap -p 22,80,443 192.168.1.55</code> — scansiona porte specifiche<br>
+<code>nmap -p 1-65535 localhost</code> — scansiona tutte le 65535 porte<br>
+<code>nmap -p- localhost</code> — equivalente: tutte le porte (shortcut)<br>
+<br>
+<strong>Modalità di scansione:</strong><br>
+<code>nmap -sS target</code> — TCP SYN scan ("stealth scan", richiede root)<br>
+<code>nmap -sT target</code> — TCP connect scan (senza privilegi root)<br>
+<code>nmap -sU target</code> — scansione porte UDP<br>
+<code>nmap -sn 192.168.1.0/24</code> — ping scan: scopri quali host sono online (nessuna porta)<br>
+<br>
+<strong>Output degli stati:</strong><br>
+• <code>open</code> — porta aperta, un servizio risponde<br>
+• <code>closed</code> — porta chiusa, host raggiungibile ma nessun servizio<br>
+• <code>filtered</code> — firewall blocca la scansione (nessuna risposta)`,
+    analogy: `nmap è come bussare a ogni porta di un palazzo: vuoi sapere quali appartamenti sono abitati (open), quali sono vuoti ma con campanello (closed), e quali sono dietro un portone blindato (filtered).` },
+
+  // ── 39. Terminal: nmap ────────────────────────────────────────────────────────
+  { type: 'terminal', emoji: '🗺️', title: 'nmap in azione',
+    cmd: 'nmap -p 22,80,443 localhost',
+    output: `Starting Nmap 7.93 ( https://nmap.org )
+Nmap scan report for localhost (127.0.0.1)
+PORT    STATE  SERVICE
+22/tcp  open   ssh
+80/tcp  closed http
+443/tcp closed https
+Nmap done: 1 IP address (1 host up) scanned in 0.05 seconds`,
+    explain: `<code>open</code> significa che un servizio risponde sulla porta (qui: sshd). <code>closed</code> significa che la porta non è in ascolto. Per scansionare una sottorete intera: <code>nmap -sn 192.168.1.0/24</code>` },
+
+  // ── 40. fuser e lsof: chi usa questa porta? ──────────────────────────────────
+  { type: 'lesson', emoji: '🔍', title: 'fuser e lsof: identifica chi usa file e porte',
+    text: `<strong>lsof</strong> (List Open Files) — elenca tutti i file aperti, incluse connessioni di rete:<br>
+<code>lsof -i</code> — tutte le connessioni di rete<br>
+<code>lsof -i:22</code> — chi usa la porta 22 (qualunque protocollo)<br>
+<code>lsof -i tcp:80</code> — chi è in ascolto sulla porta 80 TCP<br>
+<code>lsof -i@192.168.1.55:22</code> — connessioni verso host:porta specifici<br>
+<code>lsof -u mario</code> — tutti i file aperti dall'utente mario<br>
+<code>lsof /var/log/syslog</code> — quale processo sta scrivendo in quel file<br>
+<br>
+<strong>fuser</strong> — identifica i processi che usano file o socket:<br>
+<code>fuser 80/tcp</code> — PID che usa la porta 80 TCP<br>
+<code>fuser -vn tcp 80</code> — verbose: PID, utente, tipo accesso<br>
+<code>fuser -k 80/tcp</code> — KILL il processo che usa la porta 80<br>
+<code>fuser /var/log/syslog</code> — PID che ha aperto quel file<br>
+<br>
+TRAPPOLA! <code>fuser 80/tcp</code> usa la sintassi <code>porta/protocollo</code>; <code>lsof -i:80</code> usa i due punti. Non confonderli.`,
+    analogy: `lsof è il registro delle presenze di un edificio (vedi tutti i "file" tenuti aperti). fuser è il portiere che ti dice chi sta usando una stanza specifica — e può anche buttarli fuori (-k).` },
+
+  // ── 41. Quiz: nmap / fuser / lsof ────────────────────────────────────────────
+  { type: 'quiz', q: 'Vuoi vedere quale processo sta usando la porta 80 TCP sul sistema locale. Quale comando usi?',
+    opts: [
+      'fuser -vn tcp 80',
+      'nmap -p 80 localhost',
+      'lsof -k tcp:80',
+      'netstat -k 80/tcp'
+    ],
+    a: 0,
+    explain: `<code>fuser -vn tcp 80</code> mostra il PID e l'utente del processo che usa la porta 80 TCP. <code>lsof -i tcp:80</code> funziona ugualmente bene. <code>nmap -p 80 localhost</code> dice solo se la porta è aperta, non quale processo la usa. L'opzione -k di fuser uccide il processo, non la usa solo per mostrarlo. 🔍` },
 
   // ── 37. Missione: GPG ─────────────────────────────────────────────────────────
   { type: 'mission', emoji: '🎯', title: 'Missione: cifra un file con GPG',
