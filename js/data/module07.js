@@ -520,6 +520,7 @@ Nel 2026 quasi tutto è già UTF-8, ma l'esame LPIC-1 chiede ancora iconv per co
 • <code>userdel -r nome</code> rimuove utente + home · <code>usermod -L/-U</code> blocca/sblocca<br>
 • <code>chage -l user</code> mostra aging · <code>chage -M 90 -W 14 -I 7 user</code> imposta scadenza · <code>chage -d 0</code> forza cambio<br>
 • cron = ripetitivo (<code>crontab -e</code>) · at = una tantum (<code>atq</code>, <code>atrm</code>)<br>
+• Variabili crontab: <code>MAILTO=</code> (disabilita email) · <code>SHELL=/bin/bash</code> · <code>PATH=</code> (TRAPPOLA: non eredita il PATH!)<br>
 • crontab: min ora dom mese dow · dom=0 domenica (anche 7!) · <code>*/5</code> = ogni 5<br>
 • anacron = cron per macchine non sempre accese · systemd timer = alternativa moderna<br>
 • <code>LC_ALL</code> sovrascrive tutto · <code>LANG</code> = default generale<br>
@@ -613,5 +614,35 @@ locale -a
 
 # Converti un file di testo da latin1 a utf-8 (esempio)
 # echo "tèst" | iconv -f UTF-8 -t ISO-8859-1 | iconv -f ISO-8859-1 -t UTF-8` },
+
+  // ── Variabili speciali crontab (107.2) ────────────────────────────────────────
+  { type: 'lesson', emoji: '🌍', title: 'Variabili speciali nel crontab',
+    text: `Cron esegue i job in un ambiente ridotto — senza le variabili della tua sessione interattiva. Si possono impostare all'inizio del crontab:<br>
+<br>
+<code>SHELL=/bin/bash</code> — shell da usare (default: <code>/bin/sh</code>)<br>
+<code>PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin</code><br>
+<code>MAILTO=admin@example.com</code> — invia output dei job per email<br>
+<code>MAILTO=""</code> — disabilita completamente l'invio email<br>
+<code>HOME=/home/lore</code> — directory home per il job<br>
+<br>
+Esempio crontab completo con variabili:<br>
+<code>SHELL=/bin/bash</code><br>
+<code>PATH=/usr/local/bin:/usr/bin:/bin</code><br>
+<code>MAILTO=lore@example.com</code><br>
+<code>0 2 * * * /usr/local/bin/backup.sh</code><br>
+<br>
+TRAPPOLA! Cron NON eredita il PATH della tua shell interattiva. Se uno script funziona da terminale ma non da cron, il motivo è quasi sempre il PATH mancante. Soluzione: usare percorsi assoluti negli script o impostare PATH in crontab.`,
+    analogy: `Cron è un lavoratore notturno che non conosce il tuo ufficio: non sa dove sono gli strumenti (PATH), chi avvisare in caso di problemi (MAILTO), o quale lingua parlare (SHELL). Devi darglielo tutto per iscritto in cima al foglio.` },
+
+  { type: 'quiz',
+    q: 'Un job cron funziona da terminale ma non quando eseguito da cron. Causa più probabile?',
+    opts: [
+      'Il PATH di cron è diverso da quello della shell interattiva',
+      'Cron non può eseguire script bash',
+      'Il crontab deve essere riavviato dopo ogni modifica',
+      'I job cron girano sempre come root'
+    ],
+    a: 0,
+    explain: `Cron esegue i job con un PATH minimale (<code>/usr/bin:/bin</code>). Se lo script chiama comandi come <code>python3</code>, <code>node</code> o binari custom senza percorso assoluto, cron non li trova. Soluzione: impostare <code>PATH=...</code> all'inizio del crontab, oppure usare percorsi assoluti negli script (<code>/usr/bin/python3</code>). 🌍` },
 
 ];
