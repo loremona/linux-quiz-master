@@ -162,7 +162,9 @@ TRAPPOLA! L'esame chiede specificamente <strong>Orca</strong> come screen reader
 • <strong>WM</strong> = solo finestre (i3, Openbox) · <strong>DE</strong> = tutto il pacchetto (KDE, GNOME, XFCE)<br>
 • Accessibilità: <strong>AT-SPI</strong> framework · <strong>Orca</strong> screen reader · magnifier · tastiera virtuale<br>
 • <code>/etc/X11/xorg.conf</code>: sezioni Monitor/Device/Screen/ServerLayout · drop-in in <code>/etc/X11/xorg.conf.d/</code><br>
-• <code>xrandr</code> risoluzione a runtime · <code>X -configure</code> genera xorg.conf di partenza` },
+• <code>xrandr</code> risoluzione a runtime · <code>X -configure</code> genera xorg.conf di partenza<br>
+• VNC: <code>vncserver :1</code> (porta 5901) · <code>vncviewer host:1</code> · <code>~/.vnc/xstartup</code><br>
+• XDMCP: UDP 177 · display manager remoto · abilitare in gdm3/lightdm.conf` },
 
   // ── 16. Quiz: Wayland finale ──────────────────────────────────────────────────
   { type: 'quiz', q: 'Quale protocollo grafico usa un singolo compositor che gestisce display, compositing e input?',
@@ -228,5 +230,34 @@ xdpyinfo | head -10
 
 # Lista compositor/WM in esecuzione
 ps aux | grep -E 'kwin|mutter|openbox|i3|sway' | grep -v grep` },
+
+  // ── Accesso grafico remoto: VNC e XDMCP ──────────────────────────────────────
+  { type: 'lesson', emoji: '🖥️', title: 'Accesso Non Locale: VNC e XDMCP',
+    text: `Due protocolli per accedere graficamente a un sistema Linux remoto.<br>
+<br>
+<strong>VNC</strong> (Virtual Network Computing) — trasmette lo schermo remoto via protocollo RFB.<br>
+• Server: <code>vncserver</code> (TigerVNC, RealVNC, x11vnc)<br>
+• <code>vncserver :1</code> — avvia una sessione VNC sul display :1<br>
+• <code>vncserver -kill :1</code> — termina la sessione<br>
+• Client: <code>vncviewer 192.168.1.10:1</code> — connessione (porta 5901 = 5900+1)<br>
+• Config: <code>~/.vnc/xstartup</code> — script che avvia il DE nella sessione VNC<br>
+<br>
+<strong>XDMCP</strong> (X Display Manager Control Protocol) — protocollo per aprire sessioni X remote gestite da un display manager.<br>
+• UDP porta 177<br>
+• Il client X locale chiede al display manager remoto una sessione grafica completa<br>
+• Abilitazione in GDM: <code>/etc/gdm3/custom.conf</code> → <code>[xdmcp] Enable=true</code><br>
+• Abilitazione in LightDM: <code>/etc/lightdm/lightdm.conf</code> → <code>[XDMCPServer] enabled=true</code><br>
+• TRAPPOLA! XDMCP non cifra il traffico — usare solo su reti fidate o dentro tunnel SSH.<br>
+<br>
+<strong>X forwarding via SSH</strong> (già in DISPLAY card):<br>
+<code>ssh -X user@host</code> — forwarding base (trusted=no)<br>
+<code>ssh -Y user@host</code> — trusted X forwarding (meno sicuro, più compatibile)`,
+    analogy: `VNC è come un videochiamata dello schermo: vedi e controlli il desktop remoto. XDMCP è diverso: il tuo computer locale fa il rendering, il server remoto fa i calcoli — come un terminale stupido connesso a un mainframe.` },
+
+  { type: 'quiz',
+    q: 'Su quale porta UDP è in ascolto un display manager configurato con XDMCP?',
+    opts: ['177', '5900', '6000', '3389'],
+    a: 0,
+    explain: `XDMCP usa la porta UDP <strong>177</strong>. VNC usa le porte TCP 5900+ (5901 per :1, 5902 per :2...). La porta 6000 è il protocollo X11 diretto (TCP). La porta 3389 è RDP (Windows Remote Desktop). 🖥️` },
 
 ];

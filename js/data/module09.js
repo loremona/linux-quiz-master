@@ -477,7 +477,8 @@ L'esame LPIC-1 chiede i fondamentali IPv6, non il subnetting avanzato.` },
 • <code>/etc/nsswitch.conf</code>: <code>hosts: files dns</code> → prima /etc/hosts poi DNS<br>
 • <code>ping -c N</code> · <code>traceroute -n</code> · <code>ss -tlnp</code>: TCP listen<br>
 • <code>nc -zv host porta</code>: test connettività · <code>nc -l 1234</code>: server grezzo<br>
-• <code>dig dominio TIPO</code> · <code>dig +short</code> · <code>dig @8.8.8.8</code> · <code>dig -x IP</code>` },
+• <code>dig dominio TIPO</code> · <code>dig +short</code> · <code>dig @8.8.8.8</code> · <code>dig -x IP</code><br>
+• systemd-networkd: file in <code>/etc/systemd/network/*.network</code> · <code>networkctl list/status/reload</code>` },
 
   // ── 33. Quiz: finale routing ─────────────────────────────────────────────────
   { type: 'quiz', q: 'Quale comando mostra quale route viene usata per raggiungere 1.1.1.1?',
@@ -575,5 +576,46 @@ nc -zv 8.8.8.8 53 && echo "porta 53 aperta"
 
 # Visualizza i file aperti dalla rete
 sudo lsof -i -P -n | head -20` },
+
+  // ── systemd-networkd (109.2) ──────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🔌', title: 'systemd-networkd: rete gestita da systemd',
+    text: `<strong>systemd-networkd</strong> è il demone di rete integrato in systemd, alternativa a NetworkManager. Preferito su server, container e sistemi minimali.<br>
+<br>
+<strong>Abilitare:</strong><br>
+<code>systemctl enable --now systemd-networkd</code><br>
+<code>systemctl enable --now systemd-resolved</code> — per il DNS<br>
+<br>
+<strong>File di configurazione:</strong> <code>/etc/systemd/network/</code><br>
+Un file <code>.network</code> per ogni interfaccia:<br>
+<br>
+<code># /etc/systemd/network/20-eth0.network</code><br>
+<code>[Match]</code><br>
+<code>Name=eth0</code><br>
+<br>
+<code>[Network]</code><br>
+<code>Address=192.168.1.100/24</code><br>
+<code>Gateway=192.168.1.1</code><br>
+<code>DNS=8.8.8.8</code><br>
+<br>
+Per DHCP: <code>DHCP=yes</code> nella sezione <code>[Network]</code> (invece di Address/Gateway).<br>
+<br>
+<strong>networkctl</strong> — strumento CLI:<br>
+<code>networkctl list</code> — lista interfacce e stato<br>
+<code>networkctl status eth0</code> — dettagli interfaccia<br>
+<code>networkctl reload</code> — rilegge i file .network senza riavviare<br>
+<br>
+TRAPPOLA! systemd-networkd e NetworkManager NON devono girare insieme sulla stessa interfaccia — si scontrano. Scegli uno dei due.`,
+    analogy: `NetworkManager è il gestore di rete per il desktop (con GUI, notifiche, profili WiFi). systemd-networkd è il gestore minimalista per i server: niente GUI, solo file di configurazione statici — ma stabile e leggero.` },
+
+  { type: 'quiz',
+    q: 'Dove si trovano i file di configurazione di systemd-networkd per le interfacce di rete?',
+    opts: [
+      '/etc/systemd/network/',
+      '/etc/network/interfaces',
+      '/etc/sysconfig/network-scripts/',
+      '/etc/NetworkManager/system-connections/'
+    ],
+    a: 0,
+    explain: `<code>/etc/systemd/network/</code> contiene i file <code>.network</code> (configurazione IP), <code>.netdev</code> (dispositivi virtuali) e <code>.link</code> (rinomina interfacce). <code>/etc/network/interfaces</code> è la sintassi Debian legacy. <code>/etc/sysconfig/network-scripts/</code> è RHEL legacy. <code>/etc/NetworkManager/system-connections/</code> è NetworkManager. 🔌` },
 
 ];

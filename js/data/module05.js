@@ -502,6 +502,7 @@ Combo professionale all'inizio di ogni script:<br>
 • Startup login: <code>/etc/profile</code> → <code>/etc/profile.d/*.sh</code> → <code>~/.bash_profile</code> (o login, o profile, primo trovato)<br>
 • Startup non-login: <code>/etc/bash.bashrc</code> → <code>~/.bashrc</code> · Logout: <code>~/.bash_logout</code><br>
 • <code>alias ll='ls -la'</code> → permanente in <code>.bashrc</code> · <code>source</code> = <code>.</code><br>
+• Funzioni: <code>nome() { comandi; }</code> · <code>local var</code> = scope locale · <code>return N</code> · <code>declare -f nome</code><br>
 • Shebang: <code>#!/bin/bash</code> · <code>$0 $1 $# $@ $? $$</code> — variabili speciali<br>
 • <code>if...fi</code> · <code>for...done</code> · <code>while...done</code> · <code>case...esac</code><br>
 • <code>getopts "vf:" opt</code> — opzioni POSIX · <code>:</code> = argomento richiesto · <code>$OPTARG</code><br>
@@ -621,6 +622,39 @@ Output: <code>Ciao Mario, hai 30 anni</code><br>
 <br>
 TRAPPOLA! <code>echo</code> aggiunge sempre un newline finale; <code>printf</code> NO (a meno di <code>\\n</code> esplicito). Usa printf quando ti serve controllo preciso del formato.`,
   analogy: `seq è il distributore automatico di numeri progressivi. printf è il compositore tipografico: tu decidi esattamente dove va ogni elemento della riga. 🔢` },
+
+// ── Funzioni bash (105.1 L3) ─────────────────────────────────────────────────
+{ type: 'lesson', emoji: '⚙️', title: 'Funzioni bash: blocchi di codice riutilizzabili',
+  text: `Le <strong>funzioni</strong> bash raggruppano comandi in un blocco richiamabile per nome.<br>
+<br>
+<strong>Due sintassi equivalenti:</strong><br>
+<code>saluta() { echo "Ciao $1!"; }</code><br>
+<code>function saluta { echo "Ciao $1!"; }</code><br>
+<br>
+<strong>Parametri:</strong> identici agli script — <code>$1</code>, <code>$2</code>..., <code>$#</code>, <code>$@</code><br>
+<br>
+<strong>Variabili locali</strong> — <code>local</code> evita di inquinare lo scope globale:<br>
+<code>conta() { local i=0; i=$((i+1)); echo $i; }</code><br>
+Senza <code>local</code>, <code>i</code> sarebbe globale e sopravvivrebbe alla funzione.<br>
+<br>
+<strong>Valore di ritorno:</strong><br>
+<code>return 0</code> — successo (default se omesso)<br>
+<code>return 1</code> — errore (qualsiasi valore 1–255)<br>
+<code>$?</code> — cattura il codice dopo la chiamata<br>
+<br>
+<strong>Gestione funzioni:</strong><br>
+<code>declare -f nomefunzione</code> — mostra il corpo della funzione<br>
+<code>declare -F</code> — lista tutte le funzioni definite<br>
+<code>unset -f nomefunzione</code> — rimuove la funzione<br>
+<br>
+Per renderla <strong>permanente</strong>: definirla in <code>~/.bashrc</code>, poi <code>source ~/.bashrc</code>.`,
+  analogy: `Una funzione bash è come una ricetta: la scrivi una volta (in .bashrc) e la riusi quando vuoi. local è la lavagna della cucina: usi variabili temporanee senza sporcare il quaderno principale.` },
+
+{ type: 'quiz',
+  q: 'In una funzione bash, quale keyword crea una variabile visibile SOLO all\'interno della funzione stessa?',
+  opts: ['local', 'private', 'declare -l', 'static'],
+  a: 0,
+  explain: `<code>local varname=valore</code> limita la visibilità della variabile alla funzione corrente e alle sue chiamate figlie. Senza <code>local</code>, la variabile è globale e può sovrascrivere variabili omonime nel resto dello script. <code>private</code> e <code>static</code> non esistono in bash. <code>declare -l</code> converte in minuscolo, non limita lo scope. ⚙️` },
 
 { type: 'quiz',
   q: 'Come si accede a TUTTI gli elementi di un array bash chiamato "colori"?',
