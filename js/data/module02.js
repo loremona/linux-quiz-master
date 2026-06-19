@@ -407,8 +407,10 @@ Il meglio dei due mondi: il guest non è modificato (come HVM) ma usa driver par
   🛒 pacman (-Syu!) · dpkg/apt · rpm/dnf<br>
   👻 Container = kernel condiviso · VM = kernel proprio<br>
   🖥️ Hypervisor Tipo 1 (KVM, Xen) = bare-metal · Tipo 2 (VirtualBox) = hosted<br>
-  🔬 HVM = VT-x/AMD-V richiesto · PVM = guest driver · qcow2 = thin, raw = pre-allocata<br><br>
-  Ultimi 2 quiz e hai chiuso anche questo. 🔥`,
+  🔬 HVM = VT-x/AMD-V richiesto · PVM = guest driver · qcow2 = thin, raw = pre-allocata<br>
+  🆔 Clone VM → rigenera <code>machine-id</code> (<code>dbus-uuidgen</code>) + SSH host key<br>
+  ☁️ cloud-init = primo avvio YAML (<code>#cloud-config</code> · timezone · packages)<br><br>
+  Ultimi quiz e hai chiuso anche questo. 🔥`,
   analogy: null },
 
 { type: 'quiz',
@@ -463,5 +465,65 @@ pacman -Qe
 # Su Debian/Ubuntu:
 apt autoremove --dry-run    # simula prima
 apt autoremove              # poi esegui` },
+
+// ── 102.6 extra: D-Bus machine ID e template cloning ────────────────────────
+{ type: 'lesson', emoji: '🆔', title: 'Clone VM: machine-id e SSH host key da rigenerare',
+  text: `Ogni Linux ha un <strong>D-Bus machine ID</strong> univoco (128 bit) generato all'installazione.<br>
+Vive in <code>/var/lib/dbus/machine-id</code> (symlink a <code>/etc/machine-id</code>).<br>
+<br>
+<code>dbus-uuidgen --ensure</code> — verifica che esista<br>
+<code>dbus-uuidgen --get</code> — mostra l'ID corrente<br>
+<br>
+<strong>Dopo un clone VM</strong> entrambi i sistemi hanno lo stesso ID → conflitti con l'hypervisor.<br>
+Procedura per rigenerare:<br>
+<code>sudo rm -f /etc/machine-id</code><br>
+<code>sudo dbus-uuidgen --ensure=/etc/machine-id</code><br>
+<br>
+Stessa cosa per le <strong>SSH host key</strong> (chiavi di sistema del server SSH):<br>
+<code>sudo rm /etc/ssh/ssh_host_*</code><br>
+<code>sudo ssh-keygen -A</code> — rigenera tutte le host key`,
+  analogy: `machine-id è il codice fiscale della VM. Se fai un clone senza cambiarlo, hai due persone con lo stesso codice fiscale: l'anagrafe (hypervisor) non sa a chi intestare le risorse. 🆔` },
+
+{ type: 'quiz',
+  q: 'Hai clonato una VM KVM. Quale comando rigenera il D-Bus machine ID sul clone?',
+  opts: [
+    'sudo rm -f /etc/machine-id && sudo dbus-uuidgen --ensure=/etc/machine-id',
+    'sudo systemctl restart dbus',
+    'sudo machine-id-reset --new',
+    'sudo uuidgen > /etc/machine-id'
+  ],
+  a: 0,
+  explain: `Il D-Bus machine ID sta in <code>/etc/machine-id</code>. Per rigenerarlo: cancellarlo prima (<code>rm -f</code>), poi <code>dbus-uuidgen --ensure=/etc/machine-id</code> ne crea uno nuovo. Riavviare dbus non cambia l'ID. <code>uuidgen</code> produce un UUID nel formato sbagliato (con trattini). 🆔` },
+
+// ── 102.6 extra: cloud-init ──────────────────────────────────────────────────
+{ type: 'lesson', emoji: '☁️', title: 'cloud-init: il primo avvio intelligente',
+  text: `<code>cloud-init</code> è lo standard per <strong>preconfigurare una VM cloud al primo avvio</strong>. Usato da AWS, Azure, GCP e quasi tutti i provider IaaS.<br>
+<br>
+Il file di configurazione si chiama <em>cloud-config</em>, sintassi <strong>YAML</strong>.<br>
+Prima riga <strong>obbligatoria</strong>: <code>#cloud-config</code> (nessuno spazio tra # e cloud-config).<br>
+<br>
+Esempio:<br>
+<code>#cloud-config</code><br>
+<code>timezone: Europe/Rome</code><br>
+<code>hostname: web-server-01</code><br>
+<code>apt_update: true</code><br>
+<code>apt_upgrade: true</code><br>
+<code>packages:</code><br>
+<code>&nbsp;&nbsp;- nginx</code><br>
+<br>
+✅ Viene eseguito <strong>solo al primo avvio</strong>.<br>
+✅ Funziona anche per container (LXD).`,
+  analogy: `cloud-init è il questionario di benvenuto del nuovo smartphone: imposti lingua, fuso orario, account — tutto prima ancora di usarlo davvero. ☁️` },
+
+{ type: 'quiz',
+  q: 'Qual è la prima riga OBBLIGATORIA di un file cloud-config (cloud-init)?',
+  opts: [
+    '#cloud-config',
+    '#!/bin/cloud-init',
+    '# cloud-config (con spazio)',
+    'cloud-config: true'
+  ],
+  a: 0,
+  explain: `Deve essere esattamente <code>#cloud-config</code> — senza spazio tra <code>#</code> e <code>cloud-config</code>. Cloud-init usa questa riga come "magic string" per riconoscere il file. Con uno spazio (<code># cloud-config</code>) il file viene ignorato come un normale commento YAML. ☁️` },
 
 ];
