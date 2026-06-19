@@ -118,6 +118,33 @@ ls is aliased to \`ls --color=auto'` },
 Dopo aver modificato <code>.bashrc</code>: <code>source ~/.bashrc</code> (o <code>. ~/.bashrc</code>) per applicare subito senza riaprire il terminale.`,
     analogy: `.bashrc è come il tuo set di abitudini mattutine: si ripete ogni volta che apri un terminale. .bash_profile è il checklist del primo avvio della giornata: lo fai solo quando "entri" davvero nel sistema.` },
 
+  // ── 105.1 extra: ordine completo startup bash ────────────────────────────────
+  { type: 'lesson', emoji: '🗂️', title: 'Ordine preciso di startup bash (105.1)',
+    text: `<strong>Login shell</strong> — legge IN ORDINE (si ferma al primo trovato per i file ~/.*):<br>
+1. <code>/etc/profile</code> — config di sistema per tutti gli utenti<br>
+2. <code>/etc/profile.d/*.sh</code> — script modulari caricati da /etc/profile<br>
+3. <code>~/.bash_profile</code> — oppure <code>~/.bash_login</code>, oppure <code>~/.profile</code> (primo trovato!)<br>
+4. All'uscita della login shell: <code>~/.bash_logout</code><br>
+<br>
+<strong>Shell interattiva non-login</strong>:<br>
+1. <code>/etc/bash.bashrc</code> (o <code>/etc/bashrc</code> su Red Hat)<br>
+2. <code>~/.bashrc</code><br>
+<br>
+TRAPPOLA! Se esiste <code>~/.bash_profile</code>, bash non legge né <code>~/.bash_login</code> né <code>~/.profile</code>. È il primo trovato che vince — gli altri vengono ignorati!<br>
+<br>
+<code>source ~/.bashrc</code> (o <code>. ~/.bashrc</code>) — <code>source</code> e il punto <code>.</code> sono equivalenti.`,
+    analogy: `/etc/profile.d/ è come il corridoio condominiale: ogni servizio (Java, Go, nvm) lascia le sue impostazioni in un file .sh separato. Tutti vengono caricati in ordine quando entri nel condominio (login). 🗂️` },
+
+  { type: 'quiz', q: 'Una login shell bash cerca i file di configurazione personali in quale ordine?',
+    opts: [
+      '~/.bash_profile → poi (se non trovato) ~/.bash_login → poi ~/.profile',
+      '~/.profile → poi ~/.bash_login → poi ~/.bash_profile',
+      '~/.bashrc → poi ~/.bash_profile → poi /etc/profile',
+      'Li legge tutti e tre sempre, in ordine alfabetico'
+    ],
+    a: 0,
+    explain: `Bash cerca NELL'ORDINE: <code>~/.bash_profile</code>, poi <code>~/.bash_login</code>, poi <code>~/.profile</code> — e si ferma al <strong>primo trovato</strong>. Gli altri vengono completamente ignorati. Se vuoi che tutti collaborino, fai in modo che <code>~/.bash_profile</code> faccia il source di <code>~/.profile</code>. 🗂️` },
+
   // ── 11. Fun fact: login vs interactive ───────────────────────────────────────
   { type: 'fact', emoji: '🐟', title: 'Su CachyOS usi fish, non bash!',
     text: `Su Arch/CachyOS la shell di default è spesso <strong>fish</strong> o <strong>zsh</strong>. Il file di configurazione equivalente è <code>~/.config/fish/config.fish</code>. L'esame LPIC-1 però chiede <strong>bash</strong> specificamente. I concetti sono gli stessi (variabili, alias, funzioni, script) ma la sintassi cambia: <code>set -x NOME valore</code> invece di <code>export NOME=valore</code>, e <code>function nome; end</code> invece di <code>function nome() { }</code>. Per i quiz e la certificazione, pensa in bash.` },
@@ -358,6 +385,88 @@ Pattern per leggere un file:<br>
     a: 0,
     explain: `-s (silent) sopprime l'echo dei caratteri digitati. -p specifica il prompt da mostrare ("read -p 'Password: ' pwd"). -n N legge al massimo N caratteri. -h non esiste come opzione di read. In uno script reale si usano insieme: read -sp "Password: " pwd. 📥` },
 
+  // ── 105.2 extra: case...esac ─────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🎛️', title: 'case...esac: switch in bash',
+    text: `<code>case $VAR in</code><br>
+<code>&nbsp;&nbsp;pattern1) comandi ;;</code><br>
+<code>&nbsp;&nbsp;pattern2) comandi ;;</code><br>
+<code>&nbsp;&nbsp;*) default ;;</code><br>
+<code>esac</code><br>
+<br>
+Esempio pratico:<br>
+<code>case "$1" in</code><br>
+<code>&nbsp;&nbsp;start) systemctl start nginx ;;</code><br>
+<code>&nbsp;&nbsp;stop) systemctl stop nginx ;;</code><br>
+<code>&nbsp;&nbsp;restart) systemctl restart nginx ;;</code><br>
+<code>&nbsp;&nbsp;*) echo "Uso: $0 start|stop|restart" ;;</code><br>
+<code>esac</code><br>
+<br>
+I pattern supportano glob: <code>yes|y|Y)</code> • <code>*.log)</code> • <code>[0-9])</code><br>
+TRAPPOLA! Si chiude con <code>esac</code> (case al contrario). I pattern finiscono con <code>;;</code> (doppio punto e virgola).`,
+    analogy: `case è come il menu di un ristorante self-service: vai alla stazione giusta in base a quello che hai scelto. Il <code>*)</code> è la stazione "altro" — tutto quello che non hai elencato. 🎛️` },
+
+  // ── 105.2 extra: getopts ─────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🔧', title: 'getopts: gestione opzioni da riga di comando',
+    text: `<code>getopts</code> analizza le opzioni di uno script nello stile POSIX (<code>-a -b -c</code>):<br>
+<br>
+<code>while getopts "vf:o:" opt; do</code><br>
+<code>&nbsp;&nbsp;case $opt in</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;v) verbose=true ;;</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;f) file="$OPTARG" ;;</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;o) output="$OPTARG" ;;</code><br>
+<code>&nbsp;&nbsp;&nbsp;&nbsp;?) echo "Opzione sconosciuta" ; exit 1 ;;</code><br>
+<code>&nbsp;&nbsp;esac</code><br>
+<code>done</code><br>
+<br>
+• Nel formato <code>"vf:o:"</code>, il <code>:</code> dopo una lettera significa che quell'opzione <strong>richiede un argomento</strong><br>
+• <code>$OPTARG</code> — il valore dell'opzione corrente<br>
+• <code>$OPTIND</code> — indice del prossimo argomento da processare<br>
+TRAPPOLA! <code>getopts</code> gestisce solo opzioni corte (<code>-v</code>), non lunghe (<code>--verbose</code>).`,
+    analogy: `getopts è il factotum dello script: "tu dimmi le opzioni nel formato standard POSIX (-v -f file.txt) e io le smisto al posto tuo". Senza getopts dovresti leggere $1 $2 $3 uno per uno e gestire tutto a mano. 🔧` },
+
+  // ── 105.2 extra: aritmetica ──────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🔢', title: 'Aritmetica in bash: $(( )), let, expr',
+    text: `Tre modi per fare calcoli interi in bash:<br>
+<br>
+<strong><code>$(( ))</code></strong> — il modo moderno e preferito:<br>
+<code>risultato=$(( 5 + 3 ))</code> → 8<br>
+<code>echo $(( $a * $b - 1 ))</code><br>
+<code>$(( i++ ))</code> — incrementa i<br>
+<br>
+<strong><code>let</code></strong> — comando built-in:<br>
+<code>let "x = 5 * 3"</code><br>
+<code>let x+=1</code> — incrementa x di 1<br>
+<br>
+<strong><code>expr</code></strong> — comando esterno (più lento, necessita spazi e \\* per moltiplicare):<br>
+<code>risultato=$(expr 5 + 3)</code><br>
+<code>expr 5 \\* 3</code> — il backslash è necessario per sfuggire la glob!<br>
+<br>
+TRAPPOLA! bash non gestisce numeri decimali nativamente. <code>$(( 5 / 2 ))</code> = 2 (divisione intera). Per decimali usa <code>bc</code>: <code>echo "scale=2; 5/2" | bc</code>.`,
+    analogy: `$(( )) è la calcolatrice tascabile integrata nello zaino. expr è la calcolatrice che devi prendere dal cassetto (processo esterno), più lenta e con i tasti con i simboli da premere in modo strano. 🔢` },
+
+  // ── Quiz: case esac ───────────────────────────────────────────────────────────
+  { type: 'quiz', q: 'Quale parola chiude un blocco case in bash?',
+    opts: ['esac', 'done', 'fi', 'end'],
+    a: 0,
+    explain: `<code>esac</code> è "case" al contrario — il pattern di bash: <code>if...fi</code>, <code>case...esac</code>. <code>done</code> chiude <code>for</code> e <code>while</code>. <code>fi</code> chiude <code>if</code>. <code>end</code> non esiste in bash. Le singole opzioni dentro case si chiudono con <code>;;</code> (doppio punto e virgola). 🎛️` },
+
+  // ── Quiz: getopts ─────────────────────────────────────────────────────────────
+  { type: 'quiz', q: 'Nello script con "getopts \'vf:\' opt", cosa significa il ":" dopo "f"?',
+    opts: [
+      'L\'opzione -f richiede un argomento obbligatorio',
+      'L\'opzione -f è opzionale',
+      'Il separatore tra due opzioni',
+      '-f può ripetersi più volte'
+    ],
+    a: 0,
+    explain: `In <code>getopts</code>, il <code>:</code> dopo una lettera significa che quell'opzione <strong>richiede un argomento</strong>. Quel valore è disponibile in <code>$OPTARG</code>. Con <code>"vf:"</code>: <code>-v</code> è un flag senza argomento, <code>-f nome.txt</code> richiede un nome file. 🔧` },
+
+  // ── Quiz: aritmetica bash ─────────────────────────────────────────────────────
+  { type: 'quiz', q: 'Qual è il risultato di: echo $(( 7 / 2 )) in bash?',
+    opts: ['3', '3.5', '4', 'Errore: bash non supporta divisione'],
+    a: 0,
+    explain: `Bash fa solo <strong>aritmetica intera</strong>: <code>7 / 2 = 3</code> (troncato, non arrotondato). Per decimali serve <code>bc</code>: <code>echo "scale=2; 7/2" | bc</code> → 3.50. TRAPPOLA frequente in script: non aspettarti .5 da bash! 🔢` },
+
   // ── 32. Debug: set -x -e -u ───────────────────────────────────────────────────
   { type: 'lesson', emoji: '🐛', title: 'Debug: set -x, set -e, set -u',
     text: `Tre opzioni fondamentali per scrivere script robusti:<br>
@@ -390,12 +499,13 @@ Combo professionale all'inizio di ogni script:<br>
     text: `• <code>VAR=valore</code> · <code>"doppie"</code> espandono · <code>'singole'</code> letterale<br>
 • <code>export VAR</code> → variabile d'ambiente per i processi figli<br>
 • <code>PATH</code> = lista directory per trovare comandi · <code>./</code> per script locali<br>
-• <code>~/.bashrc</code> = shell interattiva · <code>~/.bash_profile</code> = login shell<br>
-• <code>alias ll='ls -la'</code> → permanente in <code>.bashrc</code> · <code>unalias ll</code> rimuove<br>
-• Shebang: <code>#!/bin/bash</code> · esegui con <code>./script.sh</code> o <code>bash script.sh</code><br>
-• <code>$0 $1 $# $@ $? $$ </code> — variabili speciali<br>
-• <code>[ -f ] [ -d ] [ -z ] -eq -lt -gt</code> — test · <code>if...fi</code> · <code>for...done</code> · <code>while...done</code><br>
-• <code>read -p</code> prompt · <code>read -s</code> silenzioso<br>
+• Startup login: <code>/etc/profile</code> → <code>/etc/profile.d/*.sh</code> → <code>~/.bash_profile</code> (o login, o profile, primo trovato)<br>
+• Startup non-login: <code>/etc/bash.bashrc</code> → <code>~/.bashrc</code> · Logout: <code>~/.bash_logout</code><br>
+• <code>alias ll='ls -la'</code> → permanente in <code>.bashrc</code> · <code>source</code> = <code>.</code><br>
+• Shebang: <code>#!/bin/bash</code> · <code>$0 $1 $# $@ $? $$</code> — variabili speciali<br>
+• <code>if...fi</code> · <code>for...done</code> · <code>while...done</code> · <code>case...esac</code><br>
+• <code>getopts "vf:" opt</code> — opzioni POSIX · <code>:</code> = argomento richiesto · <code>$OPTARG</code><br>
+• <code>$(( 5+3 ))</code> aritmetica intera · <code>let</code> · <code>expr</code><br>
 • <code>set -x</code> trace · <code>set -e</code> exit on error · <code>set -u</code> unset error` },
 
   // ── 35. Quiz finale 1: .bashrc vs .bash_profile ───────────────────────────────
