@@ -109,6 +109,34 @@ drwxr-xr-x  2 lore lore 4,0K 11 giu 22:31 Documenti
 { type: 'fact', emoji: '🧪', title: 'La pipe ha 50 anni (e non li dimostra)',
   text: `La pipe nasce nel <strong>1973</strong> ai Bell Labs: Doug McIlroy tormentava il team da anni con l'idea di "avvitare i programmi tra loro come tubi". Una sera Ken Thompson la implementò <strong>in una notte</strong>.<br><br>È il cuore della filosofia Unix: <strong>ogni programma fa UNA cosa sola e la fa bene</strong> — la potenza nasce combinandoli. Mezzo secolo dopo, la usi identica sul tuo CachyOS. 🐧` },
 
+// ── Here document e here string (103.4) ──────────────────────────────────────
+{ type: 'lesson', emoji: '📄', title: 'Here document e here string',
+  text: `Per passare input multi-riga senza creare file temporanei:<br>
+<br>
+<strong>Here document</strong> (<code>&lt;&lt;DELIM</code>):<br>
+<code>cat &lt;&lt;EOF</code><br>
+<code>Ciao $USER</code><br>
+<code>Oggi è $(date)</code><br>
+<code>EOF</code><br>
+Il testo tra la prima e l'ultima riga (EOF) viene passato come stdin. Le variabili vengono espanse.<br>
+Con virgolette singole <code>&lt;&lt;'EOF'</code>: nessuna espansione (tutto letterale).<br>
+<br>
+<strong>Here string</strong> (<code>&lt;&lt;&lt;</code>):<br>
+<code>grep "root" &lt;&lt;&lt; "root:x:0:0:/root:/bin/bash"</code><br>
+Passa una singola stringa come stdin al comando.`,
+  analogy: `Here document è come dettare un testo: lo detti direttamente invece di scriverlo su foglio e poi consegnarlo. EOF è il "punto fermo" che segna la fine. 📝` },
+
+{ type: 'quiz',
+  q: 'Cosa fa il costrutto "cat <<EOF ... EOF"?',
+  opts: [
+    'Legge il contenuto di un file chiamato EOF',
+    'Passa il testo tra <<EOF e EOF come stdin a cat',
+    'Redirige l\'output di cat verso un file chiamato EOF',
+    'Crea una variabile d\'ambiente chiamata EOF',
+  ],
+  a: 1,
+  explain: `<code>&lt;&lt;EOF</code> è un "here document": il testo fino alla riga terminatrice (EOF) viene passato come stdin al comando. Non crea file, non legge file. Usato per passare blocchi multi-riga a cat, ssh, mysql, sudo tee, ecc. Le variabili vengono espanse (a meno di usare &lt;&lt;'EOF' con singole). 📄` },
+
 // ── Elaborazione testo ───────────────────────────────────────────────────────
 { type: 'lesson', emoji: '📜', title: 'Leggere file: cat, head, tail, wc',
   text: `📖 <code>cat file</code> — stampa tutto (e <code>tac</code> lo stampa al contrario!)<br>
@@ -192,6 +220,48 @@ daemon` },
   ],
   a: 1,
   explain: `<code>^</code> àncora all'INIZIO riga e va PRIMA del testo: <code>^root</code>. Al contrario <code>$</code> àncora alla fine (e va dopo: <code>root$</code>). <code>root^</code> non ha senso, e <code>*</code> da solo all'inizio non è una regex valida (ripete il "niente"). ⬅️` },
+
+// ── sed (103.7) ──────────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '✂️', title: 'sed: il bisturi del testo',
+  text: `<code>sed</code> (Stream Editor) elabora e trasforma il testo riga per riga.<br>
+Comando più usato: la <strong>sostituzione</strong>:<br>
+<br>
+<code>sed 's/vecchio/nuovo/' file</code> — sostituisce la <strong>prima</strong> occorrenza per riga<br>
+<code>sed 's/vecchio/nuovo/<strong>g</strong>' file</code> — <strong>g</strong>lobal: TUTTE le occorrenze<br>
+<code>sed <strong>-i</strong> 's/vecchio/nuovo/g' file</code> — <strong>in-place</strong>: modifica il file direttamente<br>
+<code>sed -i.bak 's/vecchio/nuovo/g' file</code> — in-place + crea backup (file.bak)<br>
+<br>
+TRAPPOLA! Senza <code>-i</code>, sed NON modifica il file: stampa solo su stdout.`,
+  analogy: `sed senza -i è il correttore che ti restituisce la copia corretta ma lascia l'originale intatto. Con -i firma direttamente sul foglio originale. ✍️` },
+
+{ type: 'lesson', emoji: '✂️', title: 'sed: filtrare, cancellare, indirizzi',
+  text: `Altre operazioni di sed:<br>
+<br>
+<code>sed -n '/root/p' /etc/passwd</code> — <code>-n</code> sopprime l'output, <code>p</code> stampa solo le righe che matchano (= grep)<br>
+<code>sed '2,5d' file</code> — cancella le righe da 2 a 5 (<code>d</code> = delete)<br>
+<code>sed '/^#/d' file</code> — cancella le righe che iniziano con #<br>
+<code>sed -e 's/foo/bar/' -e 's/baz/qux/' file</code> — più espressioni (<code>-e</code>)<br>
+<br>
+Struttura generale: <code>sed '[indirizzo][comando]'</code><br>
+L'indirizzo è opzionale: numero riga, range (2,5), o regex (/pattern/).`,
+  analogy: `sed con indirizzi è il chirurgo che opera solo su certe pagine: "righe 2-5: cancella" oppure "solo dove c'è '#': togli". Senza indirizzo opera su tutto. ✂️` },
+
+{ type: 'quiz',
+  q: 'Vuoi sostituire TUTTE le occorrenze di "http" con "https" in config.txt. Comando?',
+  opts: [
+    'sed "s/http/https/" config.txt',
+    'sed "s/http/https/g" config.txt',
+    'sed -i "s/http/https/" config.txt',
+    'sed "g/http/https/" config.txt',
+  ],
+  a: 1,
+  explain: `<code>s/vecchio/nuovo/<strong>g</strong></code>: la <code>g</code> finale = <strong>g</strong>lobal, sostituisce ogni occorrenza in ogni riga (senza g, solo la prima per riga). <code>-i</code> modifica il file sul disco (invece di stampare), ma anche con -i senza g prenderebbe solo la prima per riga. La forma "g/x/y/" non è corretta per sed. ✂️` },
+
+{ type: 'quiz',
+  q: 'Quale opzione di sed modifica il FILE DIRETTAMENTE invece di stampare su stdout?',
+  opts: ['-g', '-i', '-n', '-e'],
+  a: 1,
+  explain: `<code>sed -i</code> = <strong>i</strong>n-place: il file viene riscritto con le modifiche. Senza -i, sed stampa il risultato ma non tocca il file originale. <code>-n</code> sopprime l'output automatico. <code>-e</code> aggiunge un'espressione. <code>-g</code> non esiste come opzione principale di sed. ✂️` },
 
 // ── find ─────────────────────────────────────────────────────────────────────
 { type: 'lesson', emoji: '🛰️', title: 'find: il segugio del filesystem',
@@ -278,6 +348,72 @@ daemon` },
   a: 2,
   explain: `Scala al contrario: <strong>-20 = massima priorità</strong>, 19 = minima, 0 = default. "Più nice" = più gentile = cede il passo. È la trappola d'esame più amata del Topic 103.6: stampatela. 🎚️` },
 
+// ── Tmux & GNU Screen (103.5) ────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🖥️', title: 'Terminal multiplexer: sessioni immortali',
+  text: `<strong>GNU Screen</strong> e <strong>tmux</strong> permettono di:<br>
+• Aprire più finestre in un unico terminale<br>
+• <strong>Distaccarsi dalla sessione</strong> e ritrovarla esatta al ritorno (anche dopo disconnessione SSH)<br>
+• I processi continuano a girare in background anche se chiudi il laptop<br>
+<br>
+Scenario tipico: lanci una compilazione via SSH → chiudi il laptop → torni il giorno dopo → riagganciala → il processo è ancora lì.`,
+  analogy: `screen e tmux sono il "pausa" del videogioco: salvi lo stato esatto e riprendi da dove eri rimasto, anche se hai spento la console (chiuso il terminale). 🎮` },
+
+{ type: 'lesson', emoji: '📺', title: 'GNU Screen: comandi essenziali',
+  text: `<strong>Da riga di comando:</strong><br>
+<code>screen -S lavoro</code> — crea sessione di nome "lavoro"<br>
+<code>screen -ls</code> — lista le sessioni esistenti<br>
+<code>screen -r lavoro</code> — riagganciati a "lavoro" (reattach)<br>
+<code>screen -d lavoro</code> — detacha una sessione remota<br>
+<code>screen -dr lavoro</code> — detacha e poi riagganciati<br>
+<br>
+<strong>Inside screen — prefisso <code>Ctrl+a</code>:</strong><br>
+<code>Ctrl+a d</code> — <strong>d</strong>etach (lascia la sessione in background)<br>
+<code>Ctrl+a c</code> — <strong>c</strong>rea una nuova finestra<br>
+<code>Ctrl+a n</code> / <code>Ctrl+a p</code> — <strong>n</strong>ext / <strong>p</strong>rev finestra<br>
+<code>Ctrl+a "</code> — lista le finestre della sessione`,
+  analogy: `Ctrl+a è il prefisso segreto di screen: come un maggiordomo che aspetta il segnale prima di eseguire. Dopo Ctrl+a, premi la lettera del comando. ✋` },
+
+{ type: 'lesson', emoji: '🔲', title: 'tmux: la versione moderna',
+  text: `<strong>Da riga di comando:</strong><br>
+<code>tmux new -s lavoro</code> — crea sessione di nome "lavoro"<br>
+<code>tmux ls</code> — lista le sessioni<br>
+<code>tmux attach -t lavoro</code> (o <code>tmux a -t lavoro</code>) — riagganciati<br>
+<code>tmux kill-session -t lavoro</code> — elimina una sessione<br>
+<br>
+<strong>Inside tmux — prefisso <code>Ctrl+b</code>:</strong><br>
+<code>Ctrl+b d</code> — <strong>d</strong>etach<br>
+<code>Ctrl+b c</code> — nuova finestra<br>
+<code>Ctrl+b %</code> — split verticale · <code>Ctrl+b "</code> — split orizzontale<br>
+<code>Ctrl+b n</code> / <code>Ctrl+b p</code> — finestra successiva/precedente<br>
+<code>Ctrl+b s</code> — lista sessioni interattiva<br>
+<br>
+TRAPPOLA! screen usa <code>Ctrl+a</code>, tmux usa <code>Ctrl+b</code>. Non confonderli all'esame!`,
+  analogy: `tmux è il successore moderno di screen: stesse idee, interfaccia più potente. Ctrl+b è il suo prefisso — dopo di esso ogni lettera è un comando. 🎛️` },
+
+{ type: 'quiz',
+  q: 'Dentro GNU Screen, come ti distacchi dalla sessione SENZA terminarla?',
+  opts: ['Ctrl+a d', 'Ctrl+b d', 'Ctrl+c', 'exit'],
+  a: 0,
+  explain: `<code>Ctrl+a d</code> = detach in screen: la sessione rimane viva in background. <code>Ctrl+b d</code> è il detach di tmux (prefisso diverso!). <code>Ctrl+c</code> manda SIGINT al processo corrente. <code>exit</code> chiude la shell e TERMINA la sessione. 📺` },
+
+{ type: 'quiz',
+  q: 'Hai una sessione screen chiamata "build" in esecuzione. Come ti ri-agganci?',
+  opts: ['screen -r build', 'screen -a build', 'tmux attach build', 'screen -S build'],
+  a: 0,
+  explain: `<code>screen -r build</code> = <strong>r</strong>eattach alla sessione "build". <code>-a</code> non esiste con quel significato in screen. <code>tmux attach</code> è per tmux, non screen. <code>-S build</code> CREA una nuova sessione con quel nome. 📺` },
+
+{ type: 'quiz',
+  q: 'Vuoi creare una sessione tmux di nome "deploy". Comando?',
+  opts: ['tmux new -s deploy', 'tmux -S deploy', 'screen -S deploy', 'tmux create deploy'],
+  a: 0,
+  explain: `<code>tmux new -s deploy</code> crea e apre una nuova sessione tmux di nome "deploy". <code>screen -S deploy</code> è screen, non tmux! <code>tmux -S</code> specifica un socket, non crea sessioni. "tmux create" non esiste. 🔲` },
+
+{ type: 'quiz',
+  q: 'Qual è il prefisso di tastiera per i comandi di tmux?',
+  opts: ['Ctrl+a', 'Ctrl+b', 'Ctrl+t', 'Alt+b'],
+  a: 1,
+  explain: `tmux usa <code>Ctrl+b</code> come prefisso (screen usa Ctrl+a — TRAPPOLA d'esame!). Dopo Ctrl+b, premi la lettera del comando: d=detach, c=nuova finestra, %=split verticale, "=split orizzontale, s=lista sessioni. 🔲` },
+
 // ── vi ───────────────────────────────────────────────────────────────────────
 { type: 'lesson', emoji: '📝', title: 'vi: l\'editor che c\'è SEMPRE',
   text: `Su un server minimale senza interfaccia grafica, <code>vi</code> c'è sempre. L'esame lo pretende (Topic 103.8). Ha <strong>modi</strong> diversi:<br><br>
@@ -300,6 +436,9 @@ daemon` },
   ✂️ <code>sort | uniq</code> (adiacenti!) · <code>cut -d -f</code> · <code>wc -l</code> · <code>tr</code><br>
   🔦 <code>grep -i -v -r -c</code> + regex <code>^inizio</code> <code>fine$</code> · <code>find -name -size -mtime -exec</code><br>
   👨‍🍳 <code>ps aux</code> · <code>kill</code> 15 gentile / 9 brutale · nice: BASSO = forte · Ctrl+Z → <code>bg</code><br>
+  📄 Here doc: <code>&lt;&lt;EOF...EOF</code> stdin multi-riga · Here string: <code>&lt;&lt;&lt; "stringa"</code><br>
+  ✂️ <code>sed 's/x/y/g'</code> · <code>-i</code> in-place · <code>-n '/p/p'</code> filtra · <code>'/^#/d'</code> cancella<br>
+  🖥️ screen: <code>-S nome -ls -r</code> · Ctrl+a = prefisso · tmux: <code>new -s -ls attach -t</code> · Ctrl+b = prefisso<br>
   📝 vi: <code>i</code> scrivi, Esc, <code>:wq</code> salva ed esci<br><br>
   Due quiz finali e il modulo è tuo. 🔥`,
   analogy: null },
