@@ -601,6 +601,7 @@ Il salt è diverso per ogni utente: anche se due utenti hanno la stessa password
 • <code>PermitRootLogin no</code> in sshd_config · <code>PasswordAuthentication no</code><br>
 • SSH tunnels: <code>-L</code> local · <code>-R</code> remote · <code>-D</code> SOCKS proxy · <code>-N</code> no command<br>
 • GPG: <code>--encrypt --recipient</code> cifra · <code>--sign</code> firma · <code>--verify</code> verifica · <code>--decrypt</code><br>
+• sudoers alias: <code>Host_Alias</code> host · <code>User_Alias</code> utenti · <code>Cmnd_Alias</code> comandi · <code>Runas_Alias</code> come-chi<br>
 • <code>nmap -p 80-443 host</code> scansiona porte · <code>nmap -p- localhost</code> tutte · <code>nmap -sn 192.168.1.0/24</code> host attivi<br>
 • <code>lsof -i:22</code> chi usa porta 22 · <code>lsof -i@host:port</code> connessioni specifiche<br>
 • <code>fuser -vn tcp 80</code> processo sulla porta 80 · <code>fuser -k 80/tcp</code> killalo` },
@@ -747,6 +748,32 @@ TRAPPOLA! <code>fuser 80/tcp</code> usa la sintassi <code>porta/protocollo</code
     ],
     a: 0,
     explain: `<code>fuser -vn tcp 80</code> mostra il PID e l'utente del processo che usa la porta 80 TCP. <code>lsof -i tcp:80</code> funziona ugualmente bene. <code>nmap -p 80 localhost</code> dice solo se la porta è aperta, non quale processo la usa. L'opzione -k di fuser uccide il processo, non la usa solo per mostrarlo. 🔍` },
+
+  // ── 42. /etc/sudoers: alias ───────────────────────────────────────────────────
+  { type: 'lesson', emoji: '📋', title: '/etc/sudoers: alias per organizzare i permessi',
+    text: `In <code>/etc/sudoers</code> gli <strong>alias</strong> permettono di raggruppare host, utenti e comandi per evitare ripetizioni.<br>
+<br>
+<strong>Quattro tipi di alias:</strong><br>
+<code>Host_Alias SERVERS = 192.168.1.7, server1, server2</code><br>
+<code>User_Alias ADMINS = carol, %sudo, PRIVILEGED_USERS</code> — % indica un gruppo<br>
+<code>Cmnd_Alias SERVICES = /usr/bin/systemctl *</code><br>
+<code>Runas_Alias WEBOPS = www-data, nginx</code> — specifica come chi eseguire<br>
+<br>
+<strong>Poi si usano nelle regole:</strong><br>
+<code>ADMINS  SERVERS=(ALL) SERVICES</code><br>
+→ gli utenti in ADMINS possono usare systemctl su tutti i SERVERS<br>
+<br>
+<strong>Esclusioni con ! (punto esclamativo):</strong><br>
+<code>User_Alias ADMINS = carol, %sudo, !john</code> — esclude john<br>
+<br>
+TRAPPOLA! I nomi degli alias sono in MAIUSCOLO per convenzione. Usare lettere minuscole è sintatticamente valido ma confonde visudo.`,
+    analogy: `Gli alias di sudoers sono come le variabili in un programma: scrivi SERVERS una volta, poi la riusi ovunque. Aggiungere un server diventa modificare un solo alias invece di cercare tutte le righe.` },
+
+  // ── 43. Quiz: sudoers alias ───────────────────────────────────────────────────
+  { type: 'quiz', q: 'In /etc/sudoers, quale tipo di alias raggruppa i comandi che si possono eseguire con sudo?',
+    opts: ['Cmnd_Alias', 'Host_Alias', 'User_Alias', 'Runas_Alias'],
+    a: 0,
+    explain: `<code>Cmnd_Alias</code> raggruppa comandi (e directory di comandi). <code>Host_Alias</code> raggruppa host/reti. <code>User_Alias</code> raggruppa utenti e gruppi. <code>Runas_Alias</code> specifica come quale utente si può eseguire il comando (la parte tra parentesi della regola). 📋` },
 
   // ── 37. Missione: GPG ─────────────────────────────────────────────────────────
   { type: 'mission', emoji: '🎯', title: 'Missione: cifra un file con GPG',

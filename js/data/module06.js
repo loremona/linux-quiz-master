@@ -160,7 +160,9 @@ TRAPPOLA! L'esame chiede specificamente <strong>Orca</strong> come screen reader
 • <strong>Wayland</strong>: compositor unico, più sicuro · <strong>XWayland</strong> = compatibilità app X11 legacy<br>
 • Display manager: <strong>GDM</strong> (GNOME) · <strong>SDDM</strong> (KDE) · <strong>LightDM</strong> · <strong>XDM</strong><br>
 • <strong>WM</strong> = solo finestre (i3, Openbox) · <strong>DE</strong> = tutto il pacchetto (KDE, GNOME, XFCE)<br>
-• Accessibilità: <strong>AT-SPI</strong> framework · <strong>Orca</strong> screen reader · magnifier · tastiera virtuale` },
+• Accessibilità: <strong>AT-SPI</strong> framework · <strong>Orca</strong> screen reader · magnifier · tastiera virtuale<br>
+• <code>/etc/X11/xorg.conf</code>: sezioni Monitor/Device/Screen/ServerLayout · drop-in in <code>/etc/X11/xorg.conf.d/</code><br>
+• <code>xrandr</code> risoluzione a runtime · <code>X -configure</code> genera xorg.conf di partenza` },
 
   // ── 16. Quiz: Wayland finale ──────────────────────────────────────────────────
   { type: 'quiz', q: 'Quale protocollo grafico usa un singolo compositor che gestisce display, compositing e input?',
@@ -174,7 +176,38 @@ TRAPPOLA! L'esame chiede specificamente <strong>Orca</strong> come screen reader
     placeholder: 'es. :0',
     explain: `Il formato è :display.screen. Il primo display locale è :0 (o :0.0 se si specifica anche lo schermo). Su sistemi con un solo utente grafico, :0 è quasi universale. Con Wayland la variabile DISPLAY può non essere impostata, ma WAYLAND_DISPLAY sarà impostata (es. wayland-1). 📺` },
 
-  // ── 18. Missione: esplora il tuo ambiente grafico ────────────────────────────
+  // ── 18. /etc/X11/xorg.conf ───────────────────────────────────────────────────
+  { type: 'lesson', emoji: '⚙️', title: '/etc/X11/xorg.conf: configura il server X',
+    text: `<code>/etc/X11/xorg.conf</code> è il file di configurazione principale del server X. Nei sistemi moderni X.Org rileva tutto automaticamente, quindi il file spesso non esiste — ma l'esame lo richiede.<br>
+<br>
+Struttura a <strong>sezioni</strong>:<br>
+<code>Section "ServerLayout"</code> — collega schermi, tastiera, mouse<br>
+<code>Section "Monitor"</code> — parametri del monitor (risoluzione, refresh)<br>
+<code>Section "Device"</code> — driver GPU (<code>Driver "modesetting"</code>)<br>
+<code>Section "Screen"</code> — combina Monitor + Device, definisce la risoluzione<br>
+<code>Section "InputDevice"</code> — tastiera, mouse (spesso autogestiti)<br>
+<br>
+File di drop-in: <code>/etc/X11/xorg.conf.d/</code> — frammenti parziali (preferiti oggi)<br>
+<code>/etc/X11/xorg.conf.d/10-keyboard.conf</code> — solo la tastiera<br>
+<br>
+Comandi utili:<br>
+<code>X -configure</code> — genera un xorg.conf di partenza (richiede che X non sia attivo)<br>
+<code>xrandr</code> — visualizza/modifica risoluzione e orientamento a runtime<br>
+<code>xdpyinfo</code> — info dettagliate sul display corrente`,
+    analogy: `xorg.conf è come il BIOS/UEFI della grafica: normalmente non lo tocchi perché il sistema si auto-configura, ma se qualcosa va storto (driver proprietario, monitor insolito) devi saperlo modificare.` },
+
+  // ── 19. Quiz: xorg.conf ───────────────────────────────────────────────────────
+  { type: 'quiz', q: 'In /etc/X11/xorg.conf, quale sezione collega Monitor e Device definendo la risoluzione della sessione?',
+    opts: [
+      'Section "Screen"',
+      'Section "ServerLayout"',
+      'Section "Monitor"',
+      'Section "Device"'
+    ],
+    a: 0,
+    explain: `<code>Section "Screen"</code> combina un Monitor e un Device (GPU) e definisce la profondità di colore e le risoluzioni disponibili. <code>ServerLayout</code> collega Screen, tastiera e mouse in un insieme. <code>Monitor</code> descrive solo le caratteristiche fisiche del monitor. <code>Device</code> specifica solo il driver GPU. ⚙️` },
+
+  // ── 20. Missione: esplora il tuo ambiente grafico ────────────────────────────
   { type: 'mission', emoji: '🎯', title: 'Missione: esplora il tuo ambiente grafico',
     text: `Scopri quale display manager, compositor e desktop environment stai usando sul tuo CachyOS.`,
     solution: `# Display manager attivo
