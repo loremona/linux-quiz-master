@@ -500,6 +500,7 @@ bob       +-   102400  102400  204800  6days    950  1000  2000
 • <code>df -h</code> → spazio filesystem · <code>du -sh dir/</code> → dimensione directory<br>
 • <code>fsck</code> → ripara disco — <strong>solo smontato!</strong><br>
 • <code>chmod 755</code> (r=4 w=2 x=1) · SUID=4000 SGID=2000 Sticky=1000<br>
+• <code>umask 022</code> → permessi default: file=644 (666-022), dir=755 (777-022)<br>
 • <code>chown user:grp file</code> · <code>chown -R</code> per directory<br>
 • <code>ln</code> hard link (stesso inode, stesso fs) · <code>ln -s</code> soft link<br>
 • <code>find / -name x -type f</code> → cerca ora · <code>locate x</code> → cerca nel DB (updatedb)<br>
@@ -564,5 +565,35 @@ find / -type f -perm -4000 2>/dev/null | xargs ls -l 2>/dev/null
 
 # Solo in /usr (più veloce, trova la maggior parte)
 find /usr -type f -perm -4000 2>/dev/null` },
+
+// ── 104.5 extra: umask ───────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🎭', title: 'umask: il filtro dei permessi di default',
+  text: `Quando crei un file o una directory, quali permessi ottieni di default? Lo decide <code>umask</code>.<br>
+<br>
+La formula:<br>
+• File: <code>666 - umask</code> = permessi (i file non ricevono mai x di default)<br>
+• Directory: <code>777 - umask</code> = permessi<br>
+<br>
+<strong>Default umask = 022:</strong><br>
+• File: 666 - 022 = <strong>644</strong> (rw-r--r--)<br>
+• Directory: 777 - 022 = <strong>755</strong> (rwxr-xr-x)<br>
+<br>
+<code>umask</code> — mostra il valore corrente<br>
+<code>umask 027</code> — imposta umask a 027 (file → 640, dir → 750)<br>
+<code>umask 0022</code> — stessa cosa con forma ottale a 4 cifre<br>
+<br>
+TRAPPOLA! umask 022 non "toglie" permessi da quelli esistenti: li <strong>esclude a priori</strong> dalla creazione. Un file già creato con 777 non cambia se cambi umask.`,
+  analogy: `umask è il timbro "classificato" messo PRIMA che il file esista. Se il timbro dice "togliamo la scrittura ai gruppi e altri" (022), tutti i nuovi file nascono già senza quelle scriture. 🎭` },
+
+{ type: 'quiz',
+  q: 'Con umask 027, quali permessi ha un nuovo file creato da un utente?',
+  opts: [
+    '640 (rw-r-----)',
+    '750 (rwxr-x---)',
+    '644 (rw-r--r--)',
+    '755 (rwxr-xr-x)'
+  ],
+  a: 0,
+  explain: `umask 027: File = 666 - 027 = <strong>640</strong> (rw-r-----). I file non ricevono mai il bit eseguibile di default, quindi si parte da 666. La directory invece: 777 - 027 = 750 (rwxr-x---). La risposta 750 è per le directory, non per i file. 🎭` },
 
 ];
