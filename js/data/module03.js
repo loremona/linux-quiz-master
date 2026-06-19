@@ -438,6 +438,7 @@ TRAPPOLA! screen usa <code>Ctrl+a</code>, tmux usa <code>Ctrl+b</code>. Non conf
   👨‍🍳 <code>ps aux</code> · <code>kill</code> 15 gentile / 9 brutale · nice: BASSO = forte · Ctrl+Z → <code>bg</code><br>
   📄 Here doc: <code>&lt;&lt;EOF...EOF</code> stdin multi-riga · Here string: <code>&lt;&lt;&lt; "stringa"</code><br>
   ✂️ <code>sed 's/x/y/g'</code> · <code>-i</code> in-place · <code>-n '/p/p'</code> filtra · <code>'/^#/d'</code> cancella<br>
+  🔪 <code>awk -F: '{print $1,$7}'</code> · <code>NR</code>=riga <code>NF</code>=campi · <code>END {print sum}</code> · <code>/pattern/</code> filtra<br>
   🖥️ screen: <code>-S nome -ls -r</code> · Ctrl+a = prefisso · tmux: <code>new -s -ls attach -t</code> · Ctrl+b = prefisso<br>
   📝 vi: <code>i</code> scrivi, Esc, <code>:wq</code> salva ed esci<br>
   📖 <code>man cmd</code> · <code>apropos parola</code> cerca nelle man · <code>type cmd</code> = builtin/binary/alias · <code>which cmd</code> = percorso<br>
@@ -579,5 +580,48 @@ Salvato in: <code>~/.bash_history</code> (scritto all'uscita della sessione)<br>
   ],
   a: 0,
   explain: `<code>sha256sum -c checksums.sha256</code> legge il file di checksum (formato: "hash  nomefile") e verifica ogni file elencato. Risposta <code>OK</code> = file integro. <code>md5sum -v</code> non esiste. <code>sha256sum --verify</code> non è la sintassi corretta. 🗜️` },
+
+// ── awk (103.2) ───────────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🔪', title: 'awk: elaborazione testo a colonne',
+  text: `<strong>awk</strong> elabora il testo riga per riga, dividendola in campi separati da spazio (o delimitatore personalizzato).<br>
+<br>
+<strong>Sintassi base:</strong> <code>awk 'condizione { azione }' file</code><br>
+<br>
+<strong>Variabili automatiche:</strong><br>
+• <code>$0</code> — riga intera · <code>$1</code>, <code>$2</code>... — primo, secondo campo...<br>
+• <code>NF</code> — numero di campi · <code>NR</code> — numero di riga corrente<br>
+• <code>FS</code> — separatore campo (default: spazio)<br>
+<br>
+<strong>Esempi chiave:</strong><br>
+<code>awk '{print $1}' file</code> — stampa prima colonna<br>
+<code>awk -F: '{print $1, $7}' /etc/passwd</code> — separatore : → login e shell<br>
+<code>awk '/root/ {print $0}' /etc/passwd</code> — filtra righe che contengono "root"<br>
+<code>awk '{sum += $3} END {print sum}' file</code> — somma la terza colonna<br>
+<code>awk 'NR==1 {print}'</code> — solo prima riga<br>
+<code>awk 'NR%2==0 {print}'</code> — solo righe pari<br>
+<code>awk '{print NR, $0}' file</code> — aggiunge numeri di riga<br>
+<br>
+TRAPPOLA! <code>awk 'END {print NR}'</code> conta le righe come <code>wc -l</code>. La differenza con sed: sed elabora il testo come pattern, awk lo elabora come tabella strutturata.`,
+  analogy: `awk è come Excel in riga di comando: ogni riga è un record, ogni campo è una cella. Con poche espressioni puoi filtrare, calcolare e trasformare tabelle di testo senza aprire nessun programma grafico.` },
+
+{ type: 'terminal', emoji: '🔪', title: 'awk in azione',
+  cmd: 'awk -F: \'{print $1, $3}\' /etc/passwd | head -5',
+  out: `root 0
+daemon 1
+bin 2
+sys 3
+sync 4`,
+  explain: `<code>-F:</code> imposta il separatore a <code>:</code>. <code>$1</code> = nome utente, <code>$3</code> = UID. Per sommare tutti gli UID: <code>awk -F: '{sum+=$3} END {print "Totale:", sum}' /etc/passwd</code>` },
+
+{ type: 'quiz',
+  q: 'Quale comando awk estrae username e shell predefinita da /etc/passwd (separatore ":")? ',
+  opts: [
+    "awk -F: '{print $1, $7}' /etc/passwd",
+    "awk '{print $1, $7}' /etc/passwd",
+    "awk -d: '{print $1, $7}' /etc/passwd",
+    "awk -F: '{print $0}' /etc/passwd"
+  ],
+  a: 0,
+  explain: `<code>-F:</code> imposta il separatore a <code>:</code>. In /etc/passwd: $1=username, $2=password(x), $3=UID, $4=GID, $5=GECOS, $6=home, $7=shell. Senza <code>-F:</code> awk tratterebbe ogni riga come un unico campo. <code>-d</code> non è un'opzione valida di awk. 🔪` },
 
 ];

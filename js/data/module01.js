@@ -364,7 +364,9 @@ nvme                   49152  2` },
   🎯 Target: 1=rescue, 3=multi-user, 5=graphical<br>
   🗂️ /dev=dispositivi, /proc=kernel+processi, /sys=hardware<br>
   🧱 Moduli: <code>lsmod</code>, <code>modprobe</code>, <code>modinfo</code><br>
-  🚪 udev crea i device al volo<br><br>
+  🚪 udev crea i device al volo<br>
+  🥚 initramfs: filesystem temporaneo in RAM — caricato da GRUB prima del root reale · <code>mkinitcpio -p linux</code> (Arch)<br>
+  🩻 <code>dmidecode -t memory</code> info RAM/BIOS · <code>lshw -short</code> inventario HW · entrambi richiedono root<br><br>
   Ora gli ultimi 3 quiz. Niente paura. 💪`,
   analogy: null },
 
@@ -429,5 +431,69 @@ ls /proc/1/
 cat /proc/version
 cat /proc/cpuinfo | head -20
 cat /proc/meminfo | head -10` },
+
+// ── initrd e initramfs (101.2) ────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🥚', title: 'initrd e initramfs: il filesystem temporaneo di boot',
+  text: `Prima di montare il filesystem root definitivo, il kernel ha bisogno di driver (LVM, LUKS, NFS, RAID...) che non può caricare senza un filesystem. Si risolve con un <strong>filesystem temporaneo in RAM</strong>:<br>
+<br>
+<strong>initrd</strong> (Initial RAM Disk) — storico: immagine di un block device caricata in RAM come disco virtuale.<br>
+<strong>initramfs</strong> (Initial RAM Filesystem) — moderno: archivio cpio estratto direttamente in tmpfs.<br>
+Oggi quasi tutti i sistemi usano initramfs.<br>
+<br>
+<strong>Processo di boot completo:</strong><br>
+<code>UEFI → GRUB → kernel + initramfs → mount root reale → PID 1 (systemd)</code><br>
+<br>
+<strong>File in /boot:</strong><br>
+<code>/boot/initramfs-linux.img</code> (Arch/CachyOS)<br>
+<code>/boot/initrd.img-5.15.0-91-generic</code> (Debian/Ubuntu)<br>
+<br>
+<strong>Rigenerare initramfs:</strong><br>
+<code>mkinitcpio -p linux</code> — Arch/CachyOS<br>
+<code>mkinitramfs -o /boot/initramfs-$(uname -r).img</code> — Debian/Ubuntu<br>
+<code>dracut --force</code> — RHEL/Fedora`,
+  analogy: `initramfs è come l'impalcatura dei cantieri: ti serve per costruire l'edificio (montare il root reale) ma la togli subito dopo. Senza di essa il kernel arriverebbe al cantiere senza attrezzi.` },
+
+{ type: 'quiz',
+  q: 'Qual è la differenza principale tra initrd e initramfs?',
+  opts: [
+    'initrd è un block device in RAM; initramfs è un archivio cpio montato come tmpfs',
+    'initrd è più moderno e veloce; initramfs è il metodo legacy',
+    'initramfs contiene GRUB; initrd contiene il kernel',
+    'Sono identici: initramfs è solo un alias di initrd'
+  ],
+  a: 0,
+  explain: `<code>initrd</code> (storico) simula un block device vero e proprio in RAM — il kernel lo vede come /dev/ram0 e lo deve formattare/montare. <code>initramfs</code> (moderno) è un archivio cpio che il kernel estrae direttamente in tmpfs: più semplice, nessun overhead di block device. Su Arch/CachyOS si usa <code>mkinitcpio</code>, su Debian <code>mkinitramfs</code>. 🥚` },
+
+// ── dmidecode e lshw (101.1) ──────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🩻', title: 'dmidecode e lshw: radiografia hardware da BIOS',
+  text: `<strong>dmidecode</strong> — legge le tabelle DMI/SMBIOS del BIOS: informazioni su CPU, RAM, scheda madre, BIOS, numero seriale.<br>
+<br>
+<code>sudo dmidecode</code> — tutto (output molto lungo)<br>
+<code>sudo dmidecode -t bios</code> — versione e produttore del BIOS<br>
+<code>sudo dmidecode -t memory</code> — slot RAM: dimensione, velocità, tipo (DDR4/DDR5)<br>
+<code>sudo dmidecode -t system</code> — produttore, modello, numero seriale<br>
+<code>sudo dmidecode -t processor</code> — info CPU dal BIOS<br>
+<br>
+<strong>lshw</strong> (List Hardware) — inventario hardware completo in formato ad albero.<br>
+<br>
+<code>sudo lshw</code> — tutto (molto dettagliato)<br>
+<code>sudo lshw -short</code> — formato compatto, un device per riga<br>
+<code>sudo lshw -class network</code> — solo schede di rete<br>
+<code>sudo lshw -class disk</code> — solo dischi<br>
+<code>sudo lshw -html > hw.html</code> — export HTML<br>
+<br>
+TRAPPOLA! Sia <code>dmidecode</code> che <code>lshw</code> richiedono root per accedere a tutte le info. Senza sudo mostrano dati incompleti o nessun output.`,
+  analogy: `dmidecode legge il cartellino dell'inventario attaccato alla macchina (il BIOS ha già queste info). lshw invece interroga il kernel e costruisce l'inventario guardando tutti i bus (PCI, USB, SCSI...) in tempo reale.` },
+
+{ type: 'quiz',
+  q: 'Vuoi sapere quanta RAM è installata e a che velocità (MHz) senza aprire il case. Quale comando?',
+  opts: [
+    'sudo dmidecode -t memory',
+    'free -h',
+    'cat /proc/meminfo',
+    'lsblk --memory'
+  ],
+  a: 0,
+  explain: `<code>dmidecode -t memory</code> legge le tabelle SMBIOS del BIOS e mostra i singoli slot RAM con dimensione, tipo (DDR4/DDR5) e velocità (MHz). <code>free -h</code> mostra solo la RAM totale/usata. <code>/proc/meminfo</code> è simile a free. <code>lsblk --memory</code> non esiste. 🩻` },
 
 ];

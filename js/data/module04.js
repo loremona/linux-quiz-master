@@ -504,6 +504,7 @@ bob       +-   102400  102400  204800  6days    950  1000  2000
 • <code>chown user:grp file</code> · <code>chown -R</code> per directory<br>
 • <code>ln</code> hard link (stesso inode, stesso fs) · <code>ln -s</code> soft link<br>
 • <code>find / -name x -type f</code> → cerca ora · <code>locate x</code> → cerca nel DB (updatedb)<br>
+• <code>tune2fs -l /dev/sda1</code> → parametri ext · <code>-L</code> label · <code>-c</code> max mount · <code>dumpe2fs -h</code> superblocco<br>
 • <strong>Quote (104.4)</strong>: <code>usrquota/grpquota</code> in fstab → <code>quotacheck -cug</code> → <code>quotaon</code> · <code>edquota -u</code> imposta · <code>repquota -a</code> report` },
 
   // ── 36. Quiz finale 1: fstab ─────────────────────────────────────────────────
@@ -595,5 +596,35 @@ TRAPPOLA! umask 022 non "toglie" permessi da quelli esistenti: li <strong>esclud
   ],
   a: 0,
   explain: `umask 027: File = 666 - 027 = <strong>640</strong> (rw-r-----). I file non ricevono mai il bit eseguibile di default, quindi si parte da 666. La directory invece: 777 - 027 = 750 (rwxr-x---). La risposta 750 è per le directory, non per i file. 🎭` },
+
+  // ── tune2fs e dumpe2fs (104.2) ────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🔧', title: 'tune2fs e dumpe2fs: parametri avanzati ext',
+    text: `<strong>tune2fs</strong> — regola i parametri di un filesystem ext2/ext3/ext4 già creato.<br>
+<br>
+<code>sudo tune2fs -l /dev/sda1</code> — mostra tutti i parametri (superblocco)<br>
+<code>sudo tune2fs -L "DATI" /dev/sda1</code> — imposta la label del filesystem<br>
+<code>sudo tune2fs -c 30 /dev/sda1</code> — fsck automatico ogni 30 mount<br>
+<code>sudo tune2fs -i 6m /dev/sda1</code> — fsck automatico ogni 6 mesi<br>
+<code>sudo tune2fs -c 0 -i 0 /dev/sda1</code> — disabilita fsck automatico<br>
+<code>sudo tune2fs -e remount-ro /dev/sda1</code> — rimonta read-only in caso di errori<br>
+<br>
+<strong>dumpe2fs</strong> — dump del superblocco e delle informazioni del gruppo di blocchi.<br>
+<br>
+<code>sudo dumpe2fs /dev/sda1</code> — tutto (molto verboso)<br>
+<code>sudo dumpe2fs -h /dev/sda1</code> — solo header superblocco (simile a tune2fs -l)<br>
+<br>
+TRAPPOLA! <code>tune2fs</code> funziona su filesystem <strong>ext2/3/4</strong> — non su xfs, btrfs, fat32 ecc. Per modificare parametri di xfs usa <code>xfs_admin</code>.`,
+    analogy: `tune2fs è il pannello di controllo del filesystem: non lo usi ogni giorno, ma quando devi regolare per quanto tempo un disco sta in "modalità paranoica" (quanti mount prima del controllo automatico) o rinominarlo, è il tuo strumento.` },
+
+  { type: 'quiz',
+    q: 'Quale comando mostra i parametri del superblocco di un filesystem ext4 (label, UUID, max mount count)?',
+    opts: [
+      'tune2fs -l /dev/sda1',
+      'fsck -l /dev/sda1',
+      'mkfs.ext4 -l /dev/sda1',
+      'lsblk -f /dev/sda1'
+    ],
+    a: 0,
+    explain: `<code>tune2fs -l</code> ("list") mostra il superblocco completo: UUID, label, dimensione blocco, numero di inode, mount count, data ultimo fsck, max mount count, ecc. <code>fsck -l</code> non esiste con quella sintassi. <code>mkfs</code> formatta (distrugge tutto!). <code>lsblk -f</code> mostra info di base ma non i parametri interni del superblocco. 🔧` },
 
 ];
