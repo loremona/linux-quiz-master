@@ -366,7 +366,10 @@ nvme                   49152  2` },
   🧱 Moduli: <code>lsmod</code>, <code>modprobe</code>, <code>modinfo</code><br>
   🚪 udev crea i device al volo<br>
   🥚 initramfs: filesystem temporaneo in RAM — caricato da GRUB prima del root reale · <code>mkinitcpio -p linux</code> (Arch)<br>
-  🩻 <code>dmidecode -t memory</code> info RAM/BIOS · <code>lshw -short</code> inventario HW · entrambi richiedono root<br><br>
+  🩻 <code>dmidecode -t memory</code> info RAM/BIOS · <code>lshw -short</code> inventario HW · entrambi richiedono root<br>
+  🏛️ SysVinit: <code>/etc/inittab</code> runlevel default · <code>/etc/init.d/</code> script · <code>service</code> · <code>telinit N</code> · <code>update-rc.d</code> (Debian) · <code>chkconfig</code> (RHEL)<br>
+  🚀 Upstart: <code>initctl list/start/stop</code> · job in <code>/etc/init/*.conf</code> · basato su eventi<br>
+  🚌 D-Bus: IPC inter-processo · system bus + session bus · <code>/etc/machine-id</code> univoco · <code>busctl list</code><br><br>
   Ora gli ultimi 3 quiz. Niente paura. 💪`,
   analogy: null },
 
@@ -495,5 +498,83 @@ TRAPPOLA! Sia <code>dmidecode</code> che <code>lshw</code> richiedono root per a
   ],
   a: 0,
   explain: `<code>dmidecode -t memory</code> legge le tabelle SMBIOS del BIOS e mostra i singoli slot RAM con dimensione, tipo (DDR4/DDR5) e velocità (MHz). <code>free -h</code> mostra solo la RAM totale/usata. <code>/proc/meminfo</code> è simile a free. <code>lsblk --memory</code> non esiste. 🩻` },
+
+// ── SysVinit (101.3) ─────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🏛️', title: 'SysVinit: il sistema di init classico',
+  text: `Prima di systemd c'era <strong>SysVinit</strong> — ancora presente su alcuni sistemi e richiesto dall'esame LPIC.<br><br>
+File chiave: <code>/etc/inittab</code> — definisce il runlevel di default e cosa lanciare.<br>
+Script in: <code>/etc/init.d/</code> — uno per ogni servizio (start|stop|restart|status).<br>
+Link di avvio: <code>/etc/rc<em>N</em>.d/</code> — link S (Start) e K (Kill) ordinati numericamente.<br><br>
+<strong>Comandi:</strong><br>
+<code>service sshd start</code> — avvia un servizio<br>
+<code>service sshd status</code> — stato del servizio<br>
+<code>telinit 3</code> — cambia runlevel subito (senza riavvio)<br>
+<code>runlevel</code> — mostra il runlevel precedente e attuale<br>
+<code>update-rc.d nginx enable</code> — abilita all'avvio (Debian)<br>
+<code>chkconfig nginx on</code> — abilita all'avvio (RHEL)<br><br>
+TRAPPOLA! In SysVinit i <strong>runlevel 2,3,4,5</strong> sono tutti multi-user. Il runlevel di default sta in <code>/etc/inittab</code> riga <code>id:3:initdefault:</code>.`,
+  analogy: `SysVinit è il capocuoco vecchio stile: ha un manuale (inittab) e una lista di compiti (init.d). Ogni mattina (runlevel) esegue i lavori dalla lista nell'ordine S01→S99. systemd è il sous-chef moderno che fa tutto in parallelo. 🍳` },
+
+{ type: 'quiz',
+  q: 'Dove si trovano gli script di avvio/arresto dei servizi in SysVinit?',
+  opts: [
+    '/etc/init.d/',
+    '/etc/systemd/system/',
+    '/etc/rc.conf',
+    '/usr/lib/init/'
+  ],
+  a: 0,
+  explain: `Gli script SysVinit vivono in <code>/etc/init.d/</code> (es. <code>/etc/init.d/ssh start</code>). I link S/K numerati in <code>/etc/rc3.d/</code> puntano a questi script. <code>/etc/systemd/system/</code> è per systemd. 🏛️` },
+
+// ── Upstart (101.3) ──────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🚀', title: 'Upstart: init basato sugli eventi',
+  text: `<strong>Upstart</strong> è stato il sistema di init di Ubuntu (2006–2014), poi sostituito da systemd. L'esame LPIC lo include perché ancora presente su sistemi legacy.<br><br>
+File di configurazione: <code>/etc/init/<em>servizio</em>.conf</code><br><br>
+<strong>Comandi:</strong><br>
+<code>initctl list</code> — elenca tutti i job e il loro stato<br>
+<code>initctl status ssh</code> — stato di un job<br>
+<code>initctl start ssh</code> — avvia<br>
+<code>initctl stop ssh</code> — ferma<br>
+<code>initctl reload ssh</code> — ricarica configurazione<br>
+<code>service ssh status</code> — alternativa (compatibilità SysVinit)<br><br>
+Differenza chiave: Upstart reagisce agli <strong>eventi</strong> (filesystem mounted, network up) invece di avviarsi in sequenza numerica come SysVinit.`,
+  analogy: `SysVinit è una lista della spesa sequenziale. Upstart è un sistema di allerta: "quando il frigo è vuoto, ordina la spesa". systemd ha preso il meglio di entrambi. 🚀` },
+
+{ type: 'quiz',
+  q: 'In Upstart, dove si trovano i file di configurazione dei job?',
+  opts: [
+    '/etc/init/',
+    '/etc/init.d/',
+    '/etc/upstart/',
+    '/usr/share/upstart/'
+  ],
+  a: 0,
+  explain: `I job Upstart sono in <code>/etc/init/*.conf</code> (es. <code>/etc/init/ssh.conf</code>). Non vanno confusi con <code>/etc/init.d/</code> che è SysVinit. I file .conf Upstart hanno una sintassi dichiarativa con stanze <code>start on</code>/<code>stop on</code>/<code>exec</code>. 🚀` },
+
+// ── D-Bus (101.1) ────────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🚌', title: 'D-Bus: il bus di sistema inter-processo',
+  text: `<strong>D-Bus</strong> (Desktop Bus) è un sistema di <strong>IPC</strong> (Inter-Process Communication) per la comunicazione tra processi in Linux.<br><br>
+Due bus principali:<br>
+• <strong>System bus</strong> — servizi di sistema (udev, NetworkManager, bluetoothd)<br>
+• <strong>Session bus</strong> — servizi per sessione utente (app desktop, notifiche)<br><br>
+<strong>Comandi utili:</strong><br>
+<code>dbus-send --system ...</code> — invia un messaggio al system bus<br>
+<code>dbus-monitor --system</code> — ascolta messaggi sul system bus (debug)<br>
+<code>busctl list</code> — elenca tutti i servizi D-Bus (tool moderno di systemd)<br><br>
+<strong>/etc/machine-id</strong> — ID univoco della macchina usato da D-Bus e systemd.<br>
+Rigenerare dopo clone VM: <code>rm /etc/machine-id && dbus-uuidgen --ensure=/etc/machine-id</code><br><br>
+TRAPPOLA! D-Bus <strong>non</strong> è un demone di rete: è comunicazione locale tra processi sullo stesso sistema.`,
+  analogy: `D-Bus è il sistema citofonico del condominio Linux: udev suona al citofono di NetworkManager che suona a firewalld. Senza D-Bus, i processi non si parlerebbero. 🚌` },
+
+{ type: 'quiz',
+  q: 'Cosa contiene il file /etc/machine-id?',
+  opts: [
+    'Un ID univoco della macchina usato da D-Bus e systemd',
+    'Il nome host della macchina',
+    'Il MAC address della scheda di rete principale',
+    'Il numero di serie del processore'
+  ],
+  a: 0,
+  explain: `<code>/etc/machine-id</code> contiene un ID univoco (32 caratteri hex) generato alla prima installazione. Usato da D-Bus per il system bus e da systemd per journald. Va rigenerato sui clone VM con <code>dbus-uuidgen --ensure=/etc/machine-id</code>. 🚌` },
 
 ];

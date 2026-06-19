@@ -505,7 +505,9 @@ bob       +-   102400  102400  204800  6days    950  1000  2000
 • <code>ln</code> hard link (stesso inode, stesso fs) · <code>ln -s</code> soft link<br>
 • <code>find / -name x -type f</code> → cerca ora · <code>locate x</code> → cerca nel DB (updatedb)<br>
 • <code>tune2fs -l /dev/sda1</code> → parametri ext · <code>-L</code> label · <code>-c</code> max mount · <code>dumpe2fs -h</code> superblocco<br>
-• <strong>Quote (104.4)</strong>: <code>usrquota/grpquota</code> in fstab → <code>quotacheck -cug</code> → <code>quotaon</code> · <code>edquota -u</code> imposta · <code>repquota -a</code> report` },
+• <strong>Quote (104.4)</strong>: <code>usrquota/grpquota</code> in fstab → <code>quotacheck -cug</code> → <code>quotaon</code> · <code>edquota -u</code> imposta · <code>repquota -a</code> report<br>
+• 🟠 XFS: <code>xfs_repair /dev/sdb1</code> (smontato!) · <code>xfs_info</code> info · <code>xfs_admin -L</code> label · <code>xfs_growfs</code> espandi<br>
+• 🔌 systemd .mount: <code>/etc/systemd/system/mnt-dati.mount</code> · <code>[Mount] What= Where= Type=</code> · <code>daemon-reload</code> dopo la creazione` },
 
   // ── 36. Quiz finale 1: fstab ─────────────────────────────────────────────────
   { type: 'quiz', q: 'L\'utente vuole che /dev/sdc1 sia montato su /data ad ogni avvio. Cosa modifica?',
@@ -626,5 +628,65 @@ TRAPPOLA! <code>tune2fs</code> funziona su filesystem <strong>ext2/3/4</strong> 
     ],
     a: 0,
     explain: `<code>tune2fs -l</code> ("list") mostra il superblocco completo: UUID, label, dimensione blocco, numero di inode, mount count, data ultimo fsck, max mount count, ecc. <code>fsck -l</code> non esiste con quella sintassi. <code>mkfs</code> formatta (distrugge tutto!). <code>lsblk -f</code> mostra info di base ma non i parametri interni del superblocco. 🔧` },
+
+  // ── xfs tools (104.2) ─────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🟠', title: 'XFS: strumenti di amministrazione',
+    text: `<strong>XFS</strong> è il filesystem di default su RHEL/Rocky/AlmaLinux. Ha i suoi strumenti dedicati.<br><br>
+<strong>Informazioni:</strong><br>
+<code>xfs_info /dev/sdb1</code> — parametri del filesystem (blocchi, inode, geometria)<br>
+<code>xfs_info /mnt/punto</code> — funziona anche sul mount point montato<br><br>
+<strong>Riparazione:</strong><br>
+<code>xfs_repair /dev/sdb1</code> — ripara XFS (<strong>solo smontato!</strong>)<br>
+<code>xfs_repair -n /dev/sdb1</code> — dry-run: controlla senza modificare<br><br>
+<strong>Amministrazione:</strong><br>
+<code>xfs_admin -L "MioLabel" /dev/sdb1</code> — imposta la label<br>
+<code>xfs_admin -l /dev/sdb1</code> — mostra la label<br>
+<code>xfs_growfs /mnt/data</code> — espande XFS (equivalente ext4: <code>resize2fs</code>)<br><br>
+TRAPPOLA! <code>fsck</code> non funziona su XFS — usa <code>xfs_repair</code>. E XFS non si può ridurre, solo espandere.`,
+    analogy: `XFS e ext4 sono due marche di utensili: stesso lavoro, nomi diversi. xfs_repair = fsck, xfs_growfs = resize2fs, xfs_admin = tune2fs. Impara entrambi i set! 🟠` },
+
+  { type: 'quiz',
+    q: 'Su un sistema RHEL /dev/sdb1 è XFS e sembra corrotto. Quale comando usi per ripararlo?',
+    opts: [
+      'xfs_repair /dev/sdb1',
+      'fsck /dev/sdb1',
+      'e2fsck /dev/sdb1',
+      'xfs_check /dev/sdb1'
+    ],
+    a: 0,
+    explain: `Su XFS si usa <code>xfs_repair</code> (non fsck/e2fsck che sono per ext2/3/4). <code>xfs_check</code> è deprecato. Il filesystem deve essere <strong>smontato</strong> prima. Usa <code>xfs_repair -n</code> per un check dry-run senza modifiche. 🟠` },
+
+  // ── systemd .mount units (104.3) ──────────────────────────────────────────
+  { type: 'lesson', emoji: '🔌', title: 'systemd mount unit: montare con systemd',
+    text: `Oltre a <code>/etc/fstab</code>, systemd permette di gestire i mount con <strong>file .mount</strong>.<br><br>
+Il nome del file corrisponde al mount point con <code>/</code> → <code>-</code> (senza lo slash iniziale):<br>
+<code>/mnt/dati</code> → <code>/etc/systemd/system/mnt-dati.mount</code><br><br>
+<strong>Struttura:</strong><br>
+<code>[Unit]</code><br>
+<code>Description=Disco dati</code><br>
+<code>[Mount]</code><br>
+<code>What=/dev/sdb1</code> — cosa montare<br>
+<code>Where=/mnt/dati</code> — dove montare<br>
+<code>Type=ext4</code> — tipo filesystem<br>
+<code>Options=defaults</code><br>
+<code>[Install]</code><br>
+<code>WantedBy=multi-user.target</code><br><br>
+<strong>Comandi:</strong><br>
+<code>systemctl daemon-reload</code> — ricarica dopo aver creato il file<br>
+<code>systemctl start mnt-dati.mount</code> — monta subito<br>
+<code>systemctl enable mnt-dati.mount</code> — monta ad ogni avvio<br><br>
+TRAPPOLA! Il nome del file .mount deve corrispondere <strong>esattamente</strong> al mount point — systemd lo verifica e dà errore se non combaciano.`,
+    analogy: `Il file .mount è la scheda di istruzioni sulla macchina del caffè: "Collega /dev/sdb1 a /mnt/dati, usa filtro ext4". daemon-reload è il pulsante per aggiornare il menu. 🔌` },
+
+  { type: 'quiz',
+    q: 'Vuoi creare una mount unit systemd per /mnt/backup. Come si chiama il file?',
+    opts: [
+      '/etc/systemd/system/mnt-backup.mount',
+      '/etc/systemd/system/mount-backup.unit',
+      '/etc/fstab.d/backup.mount',
+      '/etc/systemd/mounts/backup.conf'
+    ],
+    a: 0,
+    explain: `Le mount unit di systemd stanno in <code>/etc/systemd/system/</code> e il nome è il mount point con <code>/</code> → <code>-</code> senza slash iniziale: <code>/mnt/backup</code> → <code>mnt-backup.mount</code>. L'estensione deve essere <code>.mount</code>. 🔌` },
 
 ];
