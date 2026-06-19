@@ -585,4 +585,52 @@ done
 # Opzione 3: per vedere anche dimensioni
 ls -lh /etc/*.conf 2>/dev/null` },
 
+// ── 105.2 extra: array bash ──────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🗂️', title: 'Array bash: liste in una variabile',
+  text: `Un <strong>array</strong> bash permette di tenere più valori in una variabile:<br>
+<br>
+<strong>Creare:</strong><br>
+<code>frutti=("mela" "pera" "uva")</code> — assegna in una riga<br>
+<code>declare -a frutti</code> — dichiara esplicitamente un array<br>
+<br>
+<strong>Accedere:</strong><br>
+<code>${'${frutti[0]}'}</code> — primo elemento (indice da 0)<br>
+<code>${'${frutti[2]}'}</code> — terzo elemento<br>
+<code>${'${frutti[@]}'}</code> — <strong>tutti</strong> gli elementi<br>
+<code>${'${#frutti[@]}'}</code> — numero di elementi<br>
+<br>
+<strong>Aggiungere / modificare:</strong><br>
+<code>frutti+=("kiwi")</code> — aggiunge in coda<br>
+<code>frutti[1]="banana"</code> — sostituisce elemento 1<br>
+<br>
+<strong>Iterare:</strong><br>
+<code>for f in ${'${frutti[@]}'}; do echo "$f"; done</code>`,
+  analogy: `Una variabile è una scatola con un oggetto. Un array è una scatola con tanti scomparti numerati: [0], [1], [2]... Li nomini tutti con la stessa etichetta ma accedi ai singoli con il numero. 🗂️` },
+
+{ type: 'lesson', emoji: '🔢', title: 'seq e printf: numeri e formattazione',
+  text: `<strong>seq</strong> — genera sequenze di numeri:<br>
+<code>seq 5</code> → 1 2 3 4 5<br>
+<code>seq 2 10</code> → 2 3 4 ... 10<br>
+<code>seq 0 2 10</code> → 0 2 4 6 8 10 (step 2)<br>
+<code>for i in $(seq 1 5); do echo $i; done</code> — loop numerato<br>
+<br>
+<strong>printf</strong> — stampa formattata (come in C):<br>
+<code>printf "Ciao %s, hai %d anni\\n" "Mario" 30</code><br>
+Output: <code>Ciao Mario, hai 30 anni</code><br>
+<code>%s</code> = stringa · <code>%d</code> = intero · <code>%f</code> = float · <code>\\n</code> = newline<br>
+<br>
+TRAPPOLA! <code>echo</code> aggiunge sempre un newline finale; <code>printf</code> NO (a meno di <code>\\n</code> esplicito). Usa printf quando ti serve controllo preciso del formato.`,
+  analogy: `seq è il distributore automatico di numeri progressivi. printf è il compositore tipografico: tu decidi esattamente dove va ogni elemento della riga. 🔢` },
+
+{ type: 'quiz',
+  q: 'Come si accede a TUTTI gli elementi di un array bash chiamato "colori"?',
+  opts: [
+    '${colori[@]}',
+    '${colori}',
+    '${colori[*all*]}',
+    '$colori[]'
+  ],
+  a: 0,
+  explain: `<code>${'${colori[@]}'}</code> espande tutti gli elementi dell'array come parole separate (preserva quoting). Esiste anche <code>${'${colori[*]}'}</code> che li unisce con IFS. <code>${'${colori}'}</code> dà solo il primo elemento. <code>$colori[]</code> è sintassi errata. 🗂️` },
+
 ];
