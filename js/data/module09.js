@@ -171,6 +171,34 @@ Output tipico di <code>ip route show</code>:<br>
     a: 0,
     explain: `<code>ip addr show</code> è il comando moderno (iproute2). <code>ifconfig -a</code> è il vecchio net-tools (ancora funziona ma deprecato). <code>netstat -i</code> mostra statistiche interfacce, non indirizzi. <code>ipconfig /all</code> è Windows. L'esame accetta entrambi ip e ifconfig ma preferisce ip. 🔧` },
 
+  // ── 109.2 extra: NetworkManager / nmcli ─────────────────────────────────────
+  { type: 'lesson', emoji: '📡', title: 'NetworkManager e nmcli',
+    text: `<strong>NetworkManager</strong> è il demone che gestisce le connessioni di rete su molte distro.<br>
+<code>nmcli</code> — interfaccia CLI · <code>nmtui</code> — interfaccia testuale (TUI)<br>
+<br>
+Comandi nmcli essenziali:<br>
+<code>nmcli device status</code> — mostra tutte le interfacce e il loro stato<br>
+<code>nmcli connection show</code> — lista le connessioni configurate<br>
+<code>nmcli connection up "Nome WiFi"</code> — attiva una connessione<br>
+<code>nmcli connection down eth0</code> — disattiva<br>
+<code>nmcli device wifi list</code> — scansiona reti WiFi<br>
+<code>nmcli device wifi connect "SSID" password "pass"</code> — connetti a WiFi<br>
+<br>
+I file di configurazione stanno in <code>/etc/NetworkManager/system-connections/</code><br>
+<br>
+TRAPPOLA! Su sistemi con NetworkManager, modificare <code>/etc/network/interfaces</code> o i file in <code>/etc/sysconfig/network-scripts/</code> potrebbe essere ignorato — NM gestisce tutto lui.`,
+    analogy: `NetworkManager è il gestore automatico degli appartamenti: appena entri con il laptop, lui trova la rete, si connette e ti assegna l'IP. nmcli è il telefono per dargli ordini a voce. nmtui è il pannello di controllo sul muro. 📡` },
+
+  { type: 'quiz', q: 'Quale comando nmcli mostra lo stato di tutte le interfacce di rete?',
+    opts: [
+      'nmcli device status',
+      'nmcli connection list',
+      'nmcli show all',
+      'nmcli interface status'
+    ],
+    a: 0,
+    explain: `<code>nmcli device status</code> mostra dispositivi, tipo, stato (connected/disconnected/unmanaged) e la connessione attiva. <code>nmcli connection show</code> mostra le connessioni salvate, non i device. <code>nmcli show all</code> e <code>nmcli interface status</code> non esistono come sintassi valida. 📡` },
+
   // ── 13. hostname e hostnamectl ───────────────────────────────────────────────
   { type: 'lesson', emoji: '🏷️', title: 'hostname: il nome della macchina',
     text: `Il <strong>hostname</strong> è il nome con cui il sistema si identifica in rete.<br>
@@ -350,6 +378,36 @@ LISTEN  0       128     [::]:22             [::]:*         users:(("sshd",pid=89
     a: 0,
     explain: `<code>ss -tlnp</code>: t=TCP, l=listen, n=numerici, p=processi. È la combinazione più usata per "chi sta ascoltando su quale porta". <code>-a</code> mostra tutto (listen + connessioni). <code>netstat -r</code> mostra la tabella di routing, non i socket. 🔌` },
 
+  // ── 109.3 extra: netcat / nc ─────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🔌', title: 'netcat (nc): il coltellino svizzero del networking',
+    text: `<code>nc</code> (netcat) apre connessioni TCP/UDP grezze — fondamentale per diagnosi e test:<br>
+<br>
+<strong>Test connettività a una porta:</strong><br>
+<code>nc -zv 192.168.1.1 22</code> — testa se la porta 22 è aperta (-z = no dati, -v = verbose)<br>
+<code>nc -zv google.com 443</code> — testa HTTPS<br>
+<code>nc -zv host 20-80</code> — scansiona range di porte<br>
+<br>
+<strong>Server e client semplici:</strong><br>
+<code>nc -l 1234</code> — ascolta sulla porta 1234 (server)<br>
+<code>nc 192.168.1.5 1234</code> — connette al server (client)<br>
+<br>
+<strong>Trasferimento file:</strong><br>
+<code>nc -l 9999 &gt; ricevuto.tar.gz</code> (destinazione)<br>
+<code>nc 192.168.1.5 9999 &lt; file.tar.gz</code> (sorgente)<br>
+<br>
+TRAPPOLA! Su alcune distro il comando si chiama <code>ncat</code> (variante nmap). Le opzioni principali restano uguali.`,
+    analogy: `nc è il cavo diretto tra due computer: niente protocolli, niente header — solo byte grezzi da A a B. Se vuoi sapere se una porta è "viva", nc è il primo strumento da usare. 🔌` },
+
+  { type: 'quiz', q: 'Quale comando nc testa se la porta 443 di example.com è raggiungibile senza inviare dati?',
+    opts: [
+      'nc -zv example.com 443',
+      'nc -l example.com 443',
+      'nc --test example.com 443',
+      'nc -p 443 example.com'
+    ],
+    a: 0,
+    explain: `<code>-z</code> (zero I/O mode) apre la connessione TCP e la chiude subito senza inviare dati — perfetto per testare se una porta è aperta. <code>-v</code> stampa il risultato ("Connection to ... succeeded!"). <code>-l</code> mette nc in ascolto (server mode). <code>-p</code> specifica la porta sorgente, non la destinazione. 🔌` },
+
   // ── 27. dig, host, nslookup ──────────────────────────────────────────────────
   { type: 'lesson', emoji: '🔎', title: 'dig, host, nslookup: interroga il DNS',
     text: `Tre strumenti per fare query DNS:<br>
@@ -414,10 +472,11 @@ L'esame LPIC-1 chiede i fondamentali IPv6, non il subnetting avanzato.` },
     text: `• IPv4: 32 bit · RFC1918: 10/8, 172.16/12, 192.168/16 · /24 = 254 host<br>
 • Porte: 22 SSH · 25 SMTP · 53 DNS · 80 HTTP · 443 HTTPS · 110 POP3 · 143 IMAP<br>
 • <code>ip addr show</code> interfacce · <code>ip route show</code> routing · <code>ip link set eth0 up</code><br>
+• <code>nmcli device status</code> · <code>nmcli connection up "Nome"</code> · <code>nmtui</code><br>
 • <code>/etc/hosts</code>: IP → nome locale · <code>/etc/resolv.conf</code>: server DNS<br>
 • <code>/etc/nsswitch.conf</code>: <code>hosts: files dns</code> → prima /etc/hosts poi DNS<br>
-• <code>ping -c N</code> · <code>traceroute -n</code> · <code>mtr</code><br>
-• <code>ss -tlnp</code>: TCP listen numeri processi · <code>ss -tnp</code>: connessioni attive<br>
+• <code>ping -c N</code> · <code>traceroute -n</code> · <code>ss -tlnp</code>: TCP listen<br>
+• <code>nc -zv host porta</code>: test connettività · <code>nc -l 1234</code>: server grezzo<br>
 • <code>dig dominio TIPO</code> · <code>dig +short</code> · <code>dig @8.8.8.8</code> · <code>dig -x IP</code>` },
 
   // ── 33. Quiz: finale routing ─────────────────────────────────────────────────
