@@ -442,7 +442,14 @@ TRAPPOLA! screen usa <code>Ctrl+a</code>, tmux usa <code>Ctrl+b</code>. Non conf
   🖥️ screen: <code>-S nome -ls -r</code> · Ctrl+a = prefisso · tmux: <code>new -s -ls attach -t</code> · Ctrl+b = prefisso<br>
   📝 vi: <code>i</code> scrivi, Esc, <code>:wq</code> salva ed esci<br>
   📖 <code>man cmd</code> · <code>apropos parola</code> cerca nelle man · <code>type cmd</code> = builtin/binary/alias · <code>which cmd</code> = percorso<br>
-  ⏱️ <code>history</code> · <code>!NUM</code> riesegui · <code>!!</code> ultimo · quote: <code>'</code>=letterale <code>"</code>=espande <code>\</code>=escape<br><br>
+  ⏱️ <code>history</code> · <code>!NUM</code> riesegui · <code>!!</code> ultimo · quote: <code>'</code>=letterale <code>"</code>=espande <code>\</code>=escape<br>
+  🏷️ <code>uname -r</code> kernel release · <code>uname -a</code> tutto · <code>uname -m</code> arch · <code>uname -n</code> hostname<br>
+  🌍 <code>export VAR=val</code> · <code>printenv</code>/<code>env</code> mostra ambiente · <code>unset VAR</code> · senza export = variabile locale<br>
+  📎 <code>paste -d, f1 f2</code> affianca righe · <code>join -1 N -2 N f1 f2</code> su campo chiave (ordinare prima!)<br>
+  🔬 <code>od -c file</code> mostra \n \t \r leggibili · <code>od -x</code> hex · <code>od -t x1</code> hex a byte<br>
+  🔢 <code>nl file</code> numera righe non vuote · <code>nl -ba</code> tutte · <code>cat -n</code> = nl -ba<br>
+  🃏 Wildcards: <code>*</code> tutto · <code>?</code> un char · <code>[abc]</code> uno dei tre · <code>[!abc]</code> NOT · <code>{a,b}</code> brace expansion<br>
+  ♻️ <code>$(comando)</code> sostituzione comandi (preferita a backtick) · cattura solo stdout<br><br>
   Due quiz finali e il modulo è tuo. 🔥`,
   analogy: null },
 
@@ -623,5 +630,190 @@ sync 4`,
   ],
   a: 0,
   explain: `<code>-F:</code> imposta il separatore a <code>:</code>. In /etc/passwd: $1=username, $2=password(x), $3=UID, $4=GID, $5=GECOS, $6=home, $7=shell. Senza <code>-F:</code> awk tratterebbe ogni riga come un unico campo. <code>-d</code> non è un'opzione valida di awk. 🔪` },
+
+// ── uname (103.1) ─────────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🏷️', title: 'uname: chi sei, kernel?',
+  text: `<code>uname</code> — stampa informazioni sul sistema e sul kernel.<br><br>
+<code>uname -a</code> — <strong>tutto</strong>: kernel, hostname, release, versione, arch<br>
+<code>uname -r</code> — solo la <strong>release</strong> del kernel: es. <code>6.12.9-2-cachyos</code><br>
+<code>uname -s</code> — nome OS: <code>Linux</code><br>
+<code>uname -n</code> — nodename (hostname): <code>mymachine</code><br>
+<code>uname -m</code> — architettura macchina: <code>x86_64</code><br>
+<code>uname -p</code> — tipo processore<br>
+<code>uname -o</code> — sistema operativo: <code>GNU/Linux</code><br><br>
+Alternativa moderna: <code>hostnamectl</code> (systemd) — mostra kernel, hostname e arch in un colpo.<br><br>
+TRAPPOLA! <code>uname -r</code> = versione del kernel in esecuzione. <code>uname -v</code> = versione di build (data/ora di compilazione) — non confonderle.`,
+  analogy: `uname è il cartellino d'identità del kernel: nome, cognome, data di nascita (versione), nazionalità (architettura). -a è il passaporto completo, -r è solo il codice fiscale. 🏷️` },
+
+{ type: 'quiz',
+  q: 'Quale comando stampa SOLO la versione (release) del kernel in esecuzione?',
+  opts: [
+    'uname -r',
+    'uname -v',
+    'uname -a',
+    'kernel --version'
+  ],
+  a: 0,
+  explain: `<code>uname -r</code> stampa solo la release del kernel (es. <code>6.12.9-2-cachyos</code>). <code>uname -v</code> stampa la versione di build (data e ora di compilazione). <code>uname -a</code> stampa tutto. <code>kernel --version</code> non esiste. 🏷️` },
+
+// ── Variabili d'ambiente (103.1 L2) ──────────────────────────────────────────
+{ type: 'lesson', emoji: '🌍', title: 'Variabili d\'ambiente: export, env, unset',
+  text: `Le <strong>variabili d'ambiente</strong> sono coppie chiave=valore visibili ai processi figli.<br><br>
+<code>export VAR=valore</code> — crea e <strong>esporta</strong> la variabile (visibile ai figli)<br>
+<code>VAR=valore</code> — crea variabile <strong>locale</strong> alla shell (NON visibile ai figli)<br>
+<code>printenv</code> — mostra tutte le variabili esportate<br>
+<code>printenv PATH</code> — mostra il valore di PATH<br>
+<code>env</code> — identico a printenv (mostra l'ambiente)<br>
+<code>env VAR=val comando</code> — esegue comando con variabile temporanea<br>
+<code>set</code> — mostra variabili locali + esportate + funzioni shell<br>
+<code>unset VAR</code> — rimuove la variabile<br><br>
+Variabili importanti:<br>
+<code>PATH</code> — directory degli eseguibili · <code>HOME</code> — home utente<br>
+<code>USER</code>/<code>LOGNAME</code> — username · <code>SHELL</code> — shell corrente<br>
+<code>LANG</code>/<code>LC_ALL</code> — localizzazione<br><br>
+TRAPPOLA! <code>VAR=valore comando</code> passa la variabile SOLO a quel comando senza modificare l'ambiente corrente.`,
+  analogy: `L'ambiente è il tabellone dei messaggi in ufficio: export appende un foglio, unset lo stacca, printenv fotografa il tabellone. I processi figli nascono con una copia del tabellone. 🌍` },
+
+{ type: 'quiz',
+  q: 'Hai eseguito "NOME=Mario". Un processo figlio può vedere NOME?',
+  opts: [
+    'No: senza export la variabile è locale alla shell corrente',
+    'Sì: tutte le variabili shell sono automaticamente nell\'ambiente',
+    'Dipende dalla shell (bash vs sh)',
+    'Sì, ma solo per la sessione corrente'
+  ],
+  a: 0,
+  explain: `<code>NOME=Mario</code> crea una variabile <strong>locale</strong>: i processi figli NON la vedono. Con <code>export NOME=Mario</code> viene aggiunta all'ambiente e i figli ne ricevono una copia. Verifica con <code>printenv NOME</code> dopo la sola assegnazione: nessun output = non esportata. 🌍` },
+
+// ── paste / join (103.2) ──────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '📎', title: 'paste e join: unire file a colonne',
+  text: `<strong>paste</strong> — affianca file riga per riga (unione orizzontale):<br>
+<code>paste file1 file2</code> — unisce colonne con TAB come separatore<br>
+<code>paste -d, file1 file2</code> — usa <code>,</code> come separatore<br>
+<code>paste -s file</code> — trasforma righe in una riga sola (traspone)<br><br>
+Esempio:<br>
+file1: <code>Alice</code>/<code>Bob</code> | file2: <code>30</code>/<code>25</code><br>
+→ <code>paste file1 file2</code>: <code>Alice&nbsp;&nbsp;30</code> / <code>Bob&nbsp;&nbsp;25</code><br><br>
+<strong>join</strong> — unisce file su un campo comune (come JOIN SQL):<br>
+<code>join file1 file2</code> — unisce sulla prima colonna (deve essere <strong>ordinata!</strong>)<br>
+<code>join -1 2 -2 1 file1 file2</code> — campo 2 di file1 = campo 1 di file2<br>
+<code>join -t: file1 file2</code> — delimitatore <code>:</code><br><br>
+TRAPPOLA! <code>join</code> funziona solo se i file sono <strong>ordinati sul campo chiave</strong>. Usa <code>sort</code> prima!`,
+  analogy: `paste è come mettere due fogli fianco a fianco — le righe si affiancano. join è come VLOOKUP in Excel: mette insieme righe che hanno la stessa chiave. 📎` },
+
+{ type: 'quiz',
+  q: 'Vuoi affiancare le righe di nomi.txt e telefoni.txt separate da virgola. Quale comando?',
+  opts: [
+    'paste -d, nomi.txt telefoni.txt',
+    'join -d, nomi.txt telefoni.txt',
+    'cat -d, nomi.txt telefoni.txt',
+    'cut -d, nomi.txt telefoni.txt'
+  ],
+  a: 0,
+  explain: `<code>paste -d,</code> affianca le righe dei due file usando <code>,</code> come delimitatore. <code>join</code> fa una join su campo comune (non un semplice affiancamento). <code>cat</code> concatena verticalmente. <code>cut</code> rimuove colonne, non le aggiunge. 📎` },
+
+// ── od (103.2) ────────────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🔬', title: 'od: dump ottale/esadecimale',
+  text: `<strong>od</strong> (Octal Dump) — mostra il contenuto di un file in formato numerico.<br><br>
+<code>od file</code> — dump in ottale (default)<br>
+<code>od -c file</code> — caratteri leggibili: mostra <code>\\n</code>, <code>\\t</code>, <code>\\r</code>, <code>\\0</code><br>
+<code>od -x file</code> — esadecimale a 2 byte<br>
+<code>od -t x1 file</code> — hex a 1 byte (più chiaro)<br>
+<code>od -An -t x1 file</code> — hex senza indirizzi<br><br>
+Utile per:<br>
+• Trovare <strong>caratteri nascosti</strong> (es. <code>\\r</code> Windows vs <code>\\n</code> Unix)<br>
+• Ispezionare <strong>file binari</strong> o corrotti<br>
+• Verificare <strong>byte null</strong> (<code>\\0</code>) o BOM UTF-8<br><br>
+Alternativa: <code>xxd file</code> — formato hex/ASCII più leggibile (quando disponibile).`,
+  analogy: `od è il microscopio del filesystem: mentre cat mostra il testo, od mostra i byte grezzi. Trovi quel \\r nascosto che fa impazzire gli script shell. 🔬` },
+
+{ type: 'quiz',
+  q: 'Con quale opzione di od si vedono i caratteri come \\n, \\t, \\r in forma leggibile?',
+  opts: [
+    'od -c',
+    'od -x',
+    'od -o',
+    'od -b'
+  ],
+  a: 0,
+  explain: `<code>od -c</code> mostra i byte come caratteri: le sequenze di escape (<code>\\n</code>, <code>\\t</code>, <code>\\r</code>, <code>\\0</code>) appaiono esplicitamente. <code>od -x</code> è hex a 2 byte, <code>od -o</code> è ottale (default), <code>od -b</code> è ottale a byte singolo. 🔬` },
+
+// ── nl (103.2) ────────────────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🔢', title: 'nl: numerare le righe',
+  text: `<strong>nl</strong> (Number Lines) — numera le righe di un file.<br><br>
+<code>nl file</code> — numera le righe <strong>non vuote</strong> (default)<br>
+<code>nl -ba file</code> — numera <strong>tutte</strong> le righe (<strong>b</strong>ody <strong>a</strong>ll), incluse le vuote<br>
+<code>nl -v 10 file</code> — inizia a numerare da 10<br>
+<code>nl -s ': ' file</code> — separatore dopo il numero: <code>1: riga</code><br><br>
+Alternativa rapida: <code>cat -n file</code> — numera tutte le righe (equivalente a <code>nl -ba</code>)<br><br>
+<strong>Differenza:</strong><br>
+• <code>nl</code> salta le righe vuote per default<br>
+• <code>cat -n</code> numera <em>tutte</em> le righe, incluse le vuote<br><br>
+TRAPPOLA! <code>nl</code> di default numera solo il "body" non vuoto. Per numerare tutto come <code>cat -n</code>, usa <code>nl -ba</code>.`,
+  analogy: `nl è il segretario che mette il numero di paragrafo solo sui blocchi scritti. cat -n invece numera ogni riga del documento, anche quelle bianche. 🔢` },
+
+{ type: 'quiz',
+  q: 'Differenza tra "nl file" e "cat -n file"?',
+  opts: [
+    'nl salta le righe vuote per default; cat -n le numera tutte',
+    'cat -n numera solo le prime 100 righe; nl non ha limiti',
+    'Sono identici: nl è un alias di cat -n',
+    'nl usa numerazione ottale; cat -n usa decimale'
+  ],
+  a: 0,
+  explain: `<code>nl</code> di default numera solo le righe non vuote. <code>cat -n</code> numera tutte le righe incluse le vuote. Per far comportare nl come cat -n usa <code>nl -ba</code> (body all). 🔢` },
+
+// ── Wildcards/glob (103.3) ────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🃏', title: 'Wildcards e globbing: i jolly della shell',
+  text: `Il <strong>globbing</strong> è l'espansione dei jolly da parte della shell — avviene <em>prima</em> che il comando venga eseguito.<br><br>
+<strong>Wildcards principali:</strong><br>
+<code>*</code> — qualsiasi stringa (anche vuota): <code>*.log</code>, <code>file*</code><br>
+<code>?</code> — esattamente <strong>un</strong> carattere qualsiasi: <code>file?.txt</code><br>
+<code>[abc]</code> — uno dei caratteri tra parentesi: <code>[aeiou]*</code><br>
+<code>[a-z]</code> — un carattere nell'intervallo: <code>[0-9]*</code><br>
+<code>[!abc]</code> o <code>[^abc]</code> — NOT: qualsiasi carattere eccetto a,b,c<br><br>
+<strong>Brace expansion</strong> (non globbing vero, ma simile):<br>
+<code>{a,b,c}</code> — espande in tutte le combinazioni: <code>file{1,2,3}.txt</code><br>
+<code>{1..5}</code> — sequenza: <code>file{1..5}</code> → file1 file2 file3 file4 file5<br><br>
+TRAPPOLA! <code>*</code> non espande i file nascosti (iniziano con <code>.</code>). Usa <code>.*</code> per includerli.`,
+  analogy: `I wildcard sono le carte jolly a scala 40: * vale tutto, ? vale un solo valore, [abc] vale uno dei tre semi. La shell distribuisce le carte prima che il gioco inizi. 🃏` },
+
+{ type: 'quiz',
+  q: 'Quale pattern glob seleziona TUTTI i file .log e .txt nella directory corrente?',
+  opts: [
+    '*.{log,txt}',
+    '*.log|*.txt',
+    '*.[log|txt]',
+    '*(log|txt)'
+  ],
+  a: 0,
+  explain: `<code>*.{log,txt}</code> usa la brace expansion: la shell espande in <code>*.log *.txt</code>. <code>*.log|*.txt</code> è sintassi pipe, non glob. <code>*.[log|txt]</code> matcherebbe file che finiscono con uno dei caratteri l,o,g,|,t,x — non il risultato voluto. 🃏` },
+
+// ── Command substitution (103.4) ──────────────────────────────────────────────
+{ type: 'lesson', emoji: '♻️', title: 'Sostituzione di comandi: $() e backtick',
+  text: `La <strong>sostituzione di comandi</strong> esegue un comando e inserisce il suo output nel punto in cui è scritto.<br><br>
+Sintassi moderna: <code>$(comando)</code> — <strong>raccomandata</strong><br>
+Sintassi classica: <code>\`comando\`</code> — backtick (funziona, ma più difficile da annidare)<br><br>
+<strong>Esempi:</strong><br>
+<code>echo "Oggi è $(date)"</code> — inserisce la data nell'echo<br>
+<code>ls -l $(which python3)</code> — trova python3 e passa il percorso a ls<br>
+<code>FILE=$(ls -t | head -1)</code> — salva il file più recente in una variabile<br>
+<code>mkdir $(date +%Y-%m-%d)</code> — directory con la data odierna<br><br>
+<strong>Annidamento:</strong><br>
+<code>$(comando $(altro))</code> — con <code>$()</code> si annida facilmente<br>
+Con backtick serve il backslash: <code>\`comando \\\`altro\\\`\`</code> — più difficile<br><br>
+TRAPPOLA! La sostituzione cattura solo <strong>stdout</strong>. Gli errori vanno su stderr e non vengono catturati a meno che non aggiungi <code>2>&amp;1</code>.`,
+  analogy: `$() è la parentesi graffa del falegname: metti dentro un comando e ottieni il suo risultato al volo. Il backtick è il vecchio chiodo — funziona ma si storce quando si annida. ♻️` },
+
+{ type: 'quiz',
+  q: 'Vuoi creare una directory con il nome della data odierna. Quale sintassi è preferita?',
+  opts: [
+    'mkdir $(date +%Y-%m-%d)',
+    'mkdir `date +%Y-%m-%d`',
+    'mkdir {date +%Y-%m-%d}',
+    'mkdir $(date) è sbagliato: date non si può sostituire'
+  ],
+  a: 0,
+  explain: `<code>$(date +%Y-%m-%d)</code> è la forma moderna raccomandata per la sostituzione di comandi. Anche il backtick <code>\`date +%Y-%m-%d\`</code> funzionerebbe (e l'esame lo accetta), ma <code>$()</code> è preferita perché più leggibile e annidabile. <code>{}</code> è brace expansion, non esegue comandi. ♻️` },
 
 ];

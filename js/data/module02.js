@@ -409,7 +409,9 @@ Il meglio dei due mondi: il guest non è modificato (come HVM) ma usa driver par
   🖥️ Hypervisor Tipo 1 (KVM, Xen) = bare-metal · Tipo 2 (VirtualBox) = hosted<br>
   🔬 HVM = VT-x/AMD-V richiesto · PVM = guest driver · qcow2 = thin, raw = pre-allocata<br>
   🆔 Clone VM → rigenera <code>machine-id</code> (<code>dbus-uuidgen</code>) + SSH host key<br>
-  ☁️ cloud-init = primo avvio YAML (<code>#cloud-config</code> · timezone · packages)<br><br>
+  ☁️ cloud-init = primo avvio YAML (<code>#cloud-config</code> · timezone · packages)<br>
+  🗺️ Layout disco: <code>/var</code> separata protegge root · <code>/home</code> sopravvive a reinstallazione · <code>/boot</code> fuori da LVM<br>
+  🏺 GRUB Legacy: <code>menu.lst</code> (editato a mano) vs GRUB 2: <code>grub.cfg</code> (generato) · Legacy conta partizioni da 0: <code>(hd0,0)</code>=sda1<br><br>
   Ultimi quiz e hai chiuso anche questo. 🔥`,
   analogy: null },
 
@@ -525,5 +527,61 @@ Esempio:<br>
   ],
   a: 0,
   explain: `Deve essere esattamente <code>#cloud-config</code> — senza spazio tra <code>#</code> e <code>cloud-config</code>. Cloud-init usa questa riga come "magic string" per riconoscere il file. Con uno spazio (<code># cloud-config</code>) il file viene ignorato come un normale commento YAML. ☁️` },
+
+// ── Layout mount point (102.1) ────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🗺️', title: 'Layout disco: quali directory separare',
+  text: `Il PDF 102.1 chiede di sapere <em>perché</em> mettere alcune directory su partizioni separate.<br><br>
+<strong>Partizioni separate tipiche (server):</strong><br>
+<code>/boot</code> — 500MB–1GB, protegge il bootloader, fuori da LVM<br>
+<code>/</code> — root, dimensione moderata (20–50GB)<br>
+<code>/home</code> — dati utenti, può crescere molto → partizione elastica<br>
+<code>/var</code> — log, spool, database → proteggere il root dal riempimento<br>
+<code>/tmp</code> — file temporanei → limite di sicurezza, spesso tmpfs<br>
+<code>/srv</code> — dati dei servizi (web, FTP)<br><br>
+<strong>Perché separare?</strong><br>
+• <code>/var</code> pieno non blocca il filesystem root<br>
+• <code>/home</code> separata sopravvive alla reinstallazione del sistema<br>
+• <code>/tmp</code> montato con <code>noexec</code> impedisce exploit<br><br>
+TRAPPOLA! <strong>Non separare /usr</strong> dal root su sistemi moderni con systemd — crea problemi al boot.`,
+  analogy: `Separare le partizioni è come dividere gli appartamenti in un condominio: se l'inquilino del piano 3 allaga il bagno, il piano 1 resta asciutto. / e /var nello stesso spazio è un rischio. 🏢` },
+
+{ type: 'quiz',
+  q: 'Un server ha /var sullo stesso filesystem di /. I log riempiono il disco. Cosa succede?',
+  opts: [
+    'Il sistema si blocca completamente: niente nuovi file, niente login',
+    'Solo il servizio che genera log smette di funzionare',
+    'Linux elimina automaticamente i log più vecchi',
+    'Solo /var diventa inaccessibile, il resto funziona'
+  ],
+  a: 0,
+  explain: `Se <code>/var</code> e <code>/</code> sono sullo stesso filesystem e il disco è pieno, <strong>tutto il sistema si blocca</strong>: nessun processo può scrivere (niente PID file, niente login, niente tmp). Per questo su server <code>/</code> e <code>/var</code> vanno su partizioni separate. 🗺️` },
+
+// ── GRUB Legacy (102.2) ──────────────────────────────────────────────────────
+{ type: 'lesson', emoji: '🏺', title: 'GRUB Legacy: il bootloader storico',
+  text: `<strong>GRUB Legacy</strong> (GRUB 0.x) è la versione precedente a GRUB 2. L'esame LPIC chiede le differenze.<br><br>
+<strong>File di configurazione:</strong><br>
+GRUB Legacy → <code>/boot/grub/menu.lst</code> (o <code>grub.conf</code> su RHEL) — editato a mano<br>
+GRUB 2 → <code>/boot/grub/grub.cfg</code> — generato da <code>grub-mkconfig</code><br><br>
+<strong>Installazione GRUB Legacy dalla shell grub:</strong><br>
+<code>grub> root (hd0,0)</code> — seleziona la partizione<br>
+<code>grub> setup (hd0)</code> — installa nell'MBR<br><br>
+<strong>Differenze chiave GRUB Legacy vs GRUB 2:</strong><br>
+• Legacy: partizioni contate da <strong>0</strong> → <code>(hd0,0)</code> = /dev/sda1<br>
+• GRUB 2: partizioni contate da <strong>1</strong> → <code>(hd0,1)</code> = /dev/sda1<br>
+• Legacy: menu.lst si edita manualmente<br>
+• GRUB 2: grub.cfg si <em>genera</em> da <code>/etc/default/grub</code><br><br>
+TRAPPOLA! GRUB Legacy usa <code>(hd0,0)</code> per la prima partizione. GRUB 2 usa <code>(hd0,1)</code> — numerazione diversa!`,
+  analogy: `GRUB Legacy è il navigatore GPS con le mappe su CD: funziona, ma le mappe le aggiorni a mano. GRUB 2 è il navigatore online che si aggiorna da solo. 🏺` },
+
+{ type: 'quiz',
+  q: 'In GRUB Legacy, come si chiama il file di configurazione del menu di avvio?',
+  opts: [
+    '/boot/grub/menu.lst',
+    '/boot/grub/grub.cfg',
+    '/etc/default/grub',
+    '/boot/grub2/grub.cfg'
+  ],
+  a: 0,
+  explain: `GRUB Legacy usa <code>/boot/grub/menu.lst</code> (o <code>/boot/grub/grub.conf</code> su RHEL). Si edita <strong>manualmente</strong>. GRUB 2 invece usa <code>/boot/grub/grub.cfg</code> che viene <em>generato</em> automaticamente da <code>grub-mkconfig</code>. 🏺` },
 
 ];
