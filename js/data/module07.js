@@ -213,6 +213,54 @@ Equivalenza con usermod:<br>
 • <code>passwd -u</code> ≡ <code>usermod -U</code>`,
     analogy: `passwd -e è come scadere la tessera palestra di un utente: al prossimo accesso il sistema lo ferma e gli chiede di rinnovare prima di lasciar passare. 🔑` },
 
+  // ── 107.1 extra: chage ───────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '📅', title: 'chage: scadenza password a colpo d\'occhio',
+    text: `<code>chage</code> (change age) gestisce la <strong>scadenza della password</strong> — più comodo di passwd per vedere e impostare tutti i campi di /etc/shadow:<br>
+<br>
+<code>chage -l mario</code> — <strong>lista</strong> tutte le info di aging di mario<br>
+<code>chage -m 7 mario</code> — <strong>m</strong>inimo: mario non può cambiare password prima di 7 giorni<br>
+<code>chage -M 90 mario</code> — <strong>M</strong>assimo: la password scade dopo 90 giorni<br>
+<code>chage -W 14 mario</code> — <strong>W</strong>arning: avvisa mario 14 giorni prima della scadenza<br>
+<code>chage -I 7 mario</code> — <strong>I</strong>nactive: blocca l'account 7 giorni dopo la scadenza<br>
+<code>chage -E 2025-12-31 mario</code> — <strong>E</strong>xpire: l'account scade il 31/12/2025 (data assoluta)<br>
+<code>chage -d 0 mario</code> — imposta "last change" a 0: forza il cambio password al prossimo login`,
+    analogy: `chage è il tabellone degli scaduti del supermercato: per ogni prodotto (utente) vedi quando è stato "prodotto" (ultima modifica), quando scade e quanto preavviso dare. 📅` },
+
+  { type: 'lesson', emoji: '🗓️', title: 'I campi di /etc/shadow che chage gestisce',
+    text: `Il file <code>/etc/shadow</code> ha 9 campi separati da <code>:</code>. I campi 3–8 sono i "parametri di aging":<br>
+<br>
+<code>mario:$6$hash...:19500:7:90:14:7:20088:</code><br>
+<br>
+• Campo 3 — <strong>ultimo cambio</strong> (giorni dal 1/1/1970) → <code>chage -d</code><br>
+• Campo 4 — <strong>minimo</strong> giorni tra cambi → <code>chage -m</code><br>
+• Campo 5 — <strong>massimo</strong> giorni prima della scadenza → <code>chage -M</code><br>
+• Campo 6 — <strong>warning</strong> giorni di preavviso → <code>chage -W</code><br>
+• Campo 7 — <strong>inattività</strong> giorni dopo scadenza prima del blocco → <code>chage -I</code><br>
+• Campo 8 — <strong>expiration</strong> data assoluta di disattivazione account → <code>chage -E</code><br>
+<br>
+TRAPPOLA! <code>-m</code>/<code>-M</code> di chage = minimo/massimo della <em>password</em>. <code>-E</code> di chage = scadenza dell'<em>account</em> (non della password).`,
+    analogy: `I campi 3-8 di /etc/shadow sono come le stampe sul cartone del latte: data produzione, consumare entro, preavviso. chage ti permette di leggerle e cambiarle senza aprire il file a mano. 🗓️` },
+
+  { type: 'quiz', q: 'Quale comando mostra tutte le informazioni di scadenza password dell\'utente alice?',
+    opts: ['chage -l alice', 'passwd -S alice', 'chage -a alice', 'usermod -S alice'],
+    a: 0,
+    explain: `<code>chage -l alice</code> (list) mostra in formato leggibile tutti i parametri di aging: ultima modifica, min/max giorni, warning, inattività, expiration. <code>passwd -S alice</code> mostra uno status breve ma meno dettagliato. <code>chage -a</code> non esiste. 📅` },
+
+  { type: 'quiz', q: 'L\'admin vuole che bob sia costretto a cambiare password al suo prossimo login. Quale comando?',
+    opts: ['chage -d 0 bob', 'chage -E 0 bob', 'chage -m 0 bob', 'passwd -d bob'],
+    a: 0,
+    explain: `<code>chage -d 0</code> imposta "last password change" a 0 (1 gennaio 1970): la password risulta immediatamente scaduta e bob è obbligato a cambiarla al login. <code>chage -E 0</code> invece <em>disattiva</em> l'account. <code>passwd -d</code> rimuove la password (accesso senza password). 📅` },
+
+  { type: 'quiz', q: 'Cosa fa "chage -M 90 -W 14 -I 7 mario"?',
+    opts: [
+      'La password scade dopo 90 gg, avvisa 14 gg prima, blocca l\'account 7 gg dopo la scadenza',
+      'La password scade dopo 90 gg, il minimo è 14 gg, l\'account scade dopo 7 gg',
+      'L\'account scade dopo 90 gg, il warning è 14 gg, il minimo è 7 gg',
+      'La password scade dopo 90 gg, l\'account è bloccato per 14 gg, poi avvisa per 7 gg'
+    ],
+    a: 0,
+    explain: `<code>-M 90</code> = massimo 90 giorni prima della scadenza password. <code>-W 14</code> = avvisa mario 14 giorni prima che scada. <code>-I 7</code> = dopo la scadenza, mario ha ancora 7 giorni di grazia per aggiornare (poi l'account viene bloccato). Più opzioni possono essere combinate in un unico comando chage. 📅` },
+
   // ── Quiz: /etc/skel ──────────────────────────────────────────────────────────
   { type: 'quiz', q: 'Da dove vengono copiati i file nella home di un utente appena creato con "useradd -m"?',
     opts: ['/etc/skel', '/etc/default/useradd', '/etc/login.defs', '/root/.skel'],
@@ -470,6 +518,7 @@ Nel 2026 quasi tutto è già UTF-8, ma l'esame LPIC-1 chiede ancora iconv per co
 • <code>/etc/group</code>: 4 campi · <code>id</code> mostra UID+GID+gruppi<br>
 • <code>useradd -m -s /bin/bash -G wheel nome</code> · <code>usermod -aG docker nome</code> (mai senza -a!)<br>
 • <code>userdel -r nome</code> rimuove utente + home · <code>usermod -L/-U</code> blocca/sblocca<br>
+• <code>chage -l user</code> mostra aging · <code>chage -M 90 -W 14 -I 7 user</code> imposta scadenza · <code>chage -d 0</code> forza cambio<br>
 • cron = ripetitivo (<code>crontab -e</code>) · at = una tantum (<code>atq</code>, <code>atrm</code>)<br>
 • crontab: min ora dom mese dow · dom=0 domenica (anche 7!) · <code>*/5</code> = ogni 5<br>
 • anacron = cron per macchine non sempre accese · systemd timer = alternativa moderna<br>
