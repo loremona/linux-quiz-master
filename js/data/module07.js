@@ -164,6 +164,78 @@ TRAPPOLA! <code>usermod -G docker mario</code> SENZA <code>-a</code> sostituisce
     placeholder: 'opzione...',
     explain: `<code>-m</code> (o --create-home) dice a useradd di creare la home. Il contenuto iniziale viene copiato da <code>/etc/skel</code>. Su Arch/CachyOS è essenziale specificarla perché non è il default del comando puro. 📁` },
 
+  // ── 107.1 extra: /etc/skel e /etc/login.defs ────────────────────────────────
+  { type: 'lesson', emoji: '🏗️', title: '/etc/skel e /etc/login.defs',
+    text: `<strong>/etc/skel</strong> — il "kit di benvenuto" per i nuovi utenti:<br>
+Quando <code>useradd -m</code> crea la home, copia qui dentro tutto ciò che c'è in <code>/etc/skel/</code>. Di solito ci sono <code>.bashrc</code>, <code>.bash_profile</code>, <code>.bash_logout</code>.<br>
+<br>
+<strong>/etc/login.defs</strong> — policy di sistema per gli account:<br>
+• <code>PASS_MAX_DAYS 99999</code> — giorni max validità password<br>
+• <code>PASS_MIN_LEN 8</code> — lunghezza minima password<br>
+• <code>UID_MIN 1000</code> e <code>UID_MAX 60000</code> — range UID per utenti normali<br>
+• <code>CREATE_HOME yes</code> — default per la home (varia per distro)<br>
+<br>
+TRAPPOLA! Le policy in <code>/etc/login.defs</code> valgono per i nuovi account creati <em>dopo</em> la modifica, non per quelli esistenti.`,
+    analogy: `/etc/skel è come l'arredamento di serie di un appartamento nuovo: tavolo, sedia, cucina base. Ogni nuovo inquilino (useradd -m) troverà già questi mobili di partenza. 🏗️` },
+
+  // ── 107.1 extra: groupadd/groupmod/groupdel ──────────────────────────────────
+  { type: 'lesson', emoji: '👥', title: 'groupadd, groupmod, groupdel',
+    text: `Come useradd/usermod/userdel, ma per i gruppi:<br>
+<br>
+<code>groupadd sviluppatori</code> — crea un nuovo gruppo<br>
+<code>groupadd -g 1500 sviluppatori</code> — crea con GID specifico<br>
+<code>groupmod -n devs sviluppatori</code> — rinomina il gruppo<br>
+<code>groupmod -g 1600 devs</code> — cambia il GID<br>
+<code>groupdel sviluppatori</code> — elimina il gruppo<br>
+<br>
+TRAPPOLA! Non puoi eliminare un gruppo se è il <strong>gruppo primario</strong> di un utente. Devi prima cambiare il gruppo primario dell'utente (<code>usermod -g altrogruppo utente</code>).<br>
+<br>
+<strong>/etc/gshadow</strong> — le password dei gruppi (raramente usate):<br>
+Formato: <code>nome:!:admin:membro1,membro2</code><br>
+• <code>!</code> o <code>*</code> = nessun login con password di gruppo<br>
+• <code>gpasswd gruppo</code> — imposta password di gruppo<br>
+• <code>gpasswd -a utente gruppo</code> — alternativa a <code>usermod -aG</code>`,
+    analogy: `groupdel è come chiudere un club del condominio. Ma non puoi chiuderlo se qualcuno lo usa come residenza principale (gruppo primario) — prima devi cambiare la sua residenza. 👥` },
+
+  // ── 107.1 extra: passwd, lock/unlock ─────────────────────────────────────────
+  { type: 'lesson', emoji: '🔑', title: 'passwd: gestire le password di sistema',
+    text: `<code>passwd</code> — comandi fondamentali:<br>
+<br>
+<code>passwd mario</code> — cambia la password di mario (solo root)<br>
+<code>passwd</code> — cambia la propria password<br>
+<code>passwd -l mario</code> — <strong>blocca</strong> l'account (lock): aggiunge <code>!</code> in /etc/shadow<br>
+<code>passwd -u mario</code> — <strong>sblocca</strong> l'account (unlock)<br>
+<code>passwd -e mario</code> — <strong>scade subito</strong> la password: al prossimo login mario è costretto a cambiarla<br>
+<code>passwd -S mario</code> — mostra lo <strong>status</strong> dell'account<br>
+<br>
+Equivalenza con usermod:<br>
+• <code>passwd -l</code> ≡ <code>usermod -L</code><br>
+• <code>passwd -u</code> ≡ <code>usermod -U</code>`,
+    analogy: `passwd -e è come scadere la tessera palestra di un utente: al prossimo accesso il sistema lo ferma e gli chiede di rinnovare prima di lasciar passare. 🔑` },
+
+  // ── Quiz: /etc/skel ──────────────────────────────────────────────────────────
+  { type: 'quiz', q: 'Da dove vengono copiati i file nella home di un utente appena creato con "useradd -m"?',
+    opts: ['/etc/skel', '/etc/default/useradd', '/etc/login.defs', '/root/.skel'],
+    a: 0,
+    explain: `<code>/etc/skel</code> (skeleton = scheletro) è la template di ogni nuova home. Contiene i file dot di default (.bashrc, .bash_profile ecc.). <code>/etc/login.defs</code> ha le policy numeriche, non i file da copiare. 🏗️` },
+
+  // ── Quiz: groupdel primario ───────────────────────────────────────────────────
+  { type: 'quiz', q: 'Cosa succede se provi a eliminare con groupdel un gruppo che è il gruppo primario di un utente?',
+    opts: [
+      'Il comando fallisce con errore: non puoi eliminare un gruppo primario',
+      'Il gruppo viene eliminato e l\'utente perde il gruppo primario',
+      'L\'utente viene eliminato insieme al gruppo',
+      'Il gruppo viene rinominato in "deleted_GID"'
+    ],
+    a: 0,
+    explain: `<code>groupdel</code> rifiuta di eliminare un gruppo che è ancora il gruppo primario di qualche utente. Devi prima cambiare il gruppo primario dell'utente con <code>usermod -g altrogruppo utente</code>. 👥` },
+
+  // ── Quiz: passwd -e ───────────────────────────────────────────────────────────
+  { type: 'quiz', q: 'L\'amministratore vuole forzare mario a cambiare la password al prossimo login. Quale comando usa?',
+    opts: ['passwd -e mario', 'passwd -l mario', 'passwd -S mario', 'usermod -e mario'],
+    a: 0,
+    explain: `<code>passwd -e mario</code> (expire) fa scadere immediatamente la password. Al prossimo login il sistema blocca mario e lo obbliga a impostarne una nuova. <code>-l</code> blocca l'account (lock), <code>-S</code> mostra lo stato, <code>usermod -e</code> imposta una data di scadenza dell'account (non della password). 🔑` },
+
   // ── 15. Cron: introduzione ───────────────────────────────────────────────────
   { type: 'lesson', emoji: '⏰', title: 'cron: l\'orologiaio dei job',
     text: `<strong>cron</strong> esegue comandi a orari prestabiliti, in modo ripetitivo.<br>
@@ -247,6 +319,34 @@ TRAPPOLA! cron = ripetitivo, at = una tantum. L'esame li contrappone sempre.`,
     opts: ['cron', 'at', 'anacron', 'systemd-run'],
     a: 0,
     explain: `Ripetitivo → cron. Una tantum → at. Anacron serve per macchine non sempre accese (salta i job persi). systemd-run può pianificare job ma non è lo strumento standard per job ricorrenti settimanali nell'esame LPIC-1. 📅` },
+
+  // ── 107.2 extra: cron.allow, cron.deny, at.allow, at.deny ───────────────────
+  { type: 'lesson', emoji: '🚦', title: 'Chi può usare cron e at?',
+    text: `cron e at hanno un sistema di controllo accessi basato su file allow/deny:<br>
+<br>
+<strong>/etc/cron.allow</strong> — lista utenti autorizzati a usare crontab<br>
+<strong>/etc/cron.deny</strong> — lista utenti che NON possono usare crontab<br>
+<strong>/etc/at.allow</strong> — lista utenti autorizzati a usare at<br>
+<strong>/etc/at.deny</strong> — lista utenti che NON possono usare at<br>
+<br>
+Logica di precedenza (uguale per cron e at):<br>
+1. Se esiste <code>*.allow</code> → SOLO gli utenti in quel file possono usarlo<br>
+2. Se non esiste <code>*.allow</code> ma esiste <code>*.deny</code> → tutti tranne quelli in deny<br>
+3. Se nessuno dei due esiste → solo root può usarlo (comportamento dipende dalla distro)<br>
+<br>
+TRAPPOLA! Se <code>cron.allow</code> esiste, <code>cron.deny</code> viene <strong>ignorato completamente</strong> — vince sempre allow.`,
+    analogy: `allow è la lista degli invitati VIP: se esiste, tutti gli altri rimangono fuori, lista nera o meno. deny è il buttafuori che blocca i nomi scritti. Se c'è la lista VIP, il buttafuori va in pausa. 🚦` },
+
+  // ── Quiz: cron.allow vs cron.deny ────────────────────────────────────────────
+  { type: 'quiz', q: 'Sul sistema esistono sia /etc/cron.allow che /etc/cron.deny. L\'utente "bob" non è in nessuno dei due. Può usare crontab?',
+    opts: [
+      'No: esiste cron.allow quindi solo chi è in quella lista può usare crontab',
+      'Sì: non è in cron.deny quindi può usare crontab',
+      'Sì: cron.allow sovrascrive cron.deny quindi tutti gli altri sono ammessi',
+      'Dipende dalla shell di login di bob'
+    ],
+    a: 0,
+    explain: `Se <code>cron.allow</code> esiste, ha la precedenza assoluta: solo gli utenti elencati in quel file possono usare <code>crontab</code>. Bob non è nella lista VIP → accesso negato. <code>cron.deny</code> viene ignorato quando esiste <code>cron.allow</code>. 🚦` },
 
   // ── 22. anacron ──────────────────────────────────────────────────────────────
   { type: 'lesson', emoji: '🔄', title: 'anacron: cron per chi spegne il PC',
