@@ -160,7 +160,9 @@ TRAPPOLA! L'esame chiede specificamente <strong>Orca</strong> come screen reader
 • <strong>Wayland</strong>: compositor unico, più sicuro · <strong>XWayland</strong> = compatibilità app X11 legacy<br>
 • Display manager: <strong>GDM</strong> (GNOME) · <strong>SDDM</strong> (KDE) · <strong>LightDM</strong> · <strong>XDM</strong><br>
 • <strong>WM</strong> = solo finestre (i3, Openbox) · <strong>DE</strong> = tutto il pacchetto (KDE, GNOME, XFCE)<br>
-• Accessibilità: <strong>AT-SPI</strong> framework · <strong>Orca</strong> screen reader · magnifier · tastiera virtuale<br>
+• Accessibilità: <strong>AT-SPI</strong> framework · <strong>Orca</strong> screen reader · braille display · magnifier (KMagnifier/Zoom)<br>
+• Tastiera/mouse: <strong>Sticky</strong> (un tasto alla volta) · <strong>Slow</strong> (tieni premuto) · <strong>Bounce</strong> (anti-tremore) · <strong>Mouse keys</strong> (tastierino) · AccessX/<code>xkbset</code> · gesti: Shift×5 / Shift 8s<br>
+• Vista: Contrasto elevato · Testo grande · Dimensioni cursore · tastiera su schermo (<code>onboard</code>)<br>
 • <code>/etc/X11/xorg.conf</code>: sezioni Monitor/Device/Screen/ServerLayout · drop-in in <code>/etc/X11/xorg.conf.d/</code><br>
 • <code>xrandr</code> risoluzione a runtime · <code>X -configure</code> genera xorg.conf di partenza<br>
 • VNC: <code>vncserver :1</code> (porta 5901) · <code>vncviewer host:1</code> · <code>~/.vnc/xstartup</code><br>
@@ -259,5 +261,67 @@ ps aux | grep -E 'kwin|mutter|openbox|i3|sway' | grep -v grep` },
     opts: ['177', '5900', '6000', '3389'],
     a: 0,
     explain: `XDMCP usa la porta UDP <strong>177</strong>. VNC usa le porte TCP 5900+ (5901 per :1, 5902 per :2...). La porta 6000 è il protocollo X11 diretto (TCP). La porta 3389 è RDP (Windows Remote Desktop). 🖥️` },
+
+  // ── 16. Assistenza tastiera e mouse (106.3) ───────────────────────────────────
+  { type: 'lesson', emoji: '⌨️', title: 'Accessibilità: assistenza a tastiera e mouse',
+    text: `Quattro funzioni che l'esame chiede a memoria — risolvono difficoltà motorie alla tastiera:<br>
+<br>
+• <strong>Tasti permanenti</strong> (Sticky keys) — digitare le scorciatoie <strong>un tasto alla volta</strong>: premi <code>Ctrl</code>, rilascia, poi <code>C</code> (invece di tenerli premuti insieme)<br>
+• <strong>Tasti lenti</strong> (Slow keys) — il tasto va <strong>tenuto premuto</strong> un po' prima che l'input venga accettato (evita pressioni accidentali)<br>
+• <strong>Tasti di rimbalzo</strong> (Bounce keys) — ignora le pressioni <strong>ripetute troppo ravvicinate</strong>: utile per chi ha tremori alle mani<br>
+• <strong>Tasti del mouse</strong> (Mouse keys) — muovi il puntatore col <strong>tastierino numerico</strong>: <code>2</code>=giù, <code>4</code>=sinistra, <code>7</code>=nord-ovest, <code>5</code>=clic sinistro<br>
+<br>
+<strong>Gesti di attivazione</strong> (senza menu): Tasti permanenti = premi <code>Shift</code> <strong>5 volte</strong>; Tasti lenti = tieni <code>Shift</code> per <strong>8 secondi</strong>.<br>
+<br>
+Dove stanno: in GNOME è <em>Accesso universale</em>, in KDE <em>Impostazioni di sistema → Accessibilità</em>.<br>
+<br>
+TRAPPOLA! Queste funzioni (Slow/Sticky/Bounce/Mouse keys) sono fornite da <strong>AccessX</strong>, parte dell'estensione tastiera di X. Da riga di comando si regolano con <code>xkbset</code>.`,
+    analogy: `Sticky keys è il cassiere che ti fa pagare a rate invece che tutto insieme. Bounce keys è il buttafuori che ignora chi suona il campanello dieci volte di fila. Mouse keys è guidare il cursore con la cloche del tastierino. ⌨️` },
+
+  { type: 'quiz',
+    q: 'Un utente con tremori alle mani preme spesso lo stesso tasto due volte senza volerlo. Quale funzione di accessibilità lo aiuta?',
+    opts: [
+      'Tasti di rimbalzo (Bounce keys)',
+      'Tasti permanenti (Sticky keys)',
+      'Tasti del mouse (Mouse keys)',
+      'Tasti lenti (Slow keys)'
+    ],
+    a: 0,
+    explain: `I <strong>Tasti di rimbalzo</strong> (Bounce keys) inseriscono un ritardo: una nuova pressione viene accettata solo dopo un certo tempo dall'ultima, ignorando i doppi colpi involontari da tremore. I Tasti permanenti servono per le scorciatoie un tasto alla volta; i Tasti lenti richiedono di tenere premuto; i Tasti del mouse muovono il puntatore. ⌨️` },
+
+  // ── 17. Tastiera su schermo e clic assistito (106.3) ──────────────────────────
+  { type: 'lesson', emoji: '🖱️', title: 'Accessibilità: tastiera su schermo e clic assistito',
+    text: `Quando la tastiera fisica è scomoda o il clic è doloroso:<br>
+<br>
+• <strong>Tastiera su schermo</strong> (Screen Keyboard / On-Screen Keyboard) — si digita col mouse o il touch, come sullo smartphone. In GNOME è integrata; in KDE/altri si installa il pacchetto <code>onboard</code><br>
+• <strong>Simula clic destro</strong> (GNOME) — tieni premuto il tasto sinistro per generare un clic destro<br>
+• <strong>Simula clic al passaggio</strong> — il clic scatta tenendo fermo il mouse su un punto<br>
+• <strong>KMouseTool</strong> (KDE) — fornisce queste stesse funzioni di clic automatico<br>
+• Ritardo del <strong>doppio clic</strong> allungabile nelle preferenze del mouse, per chi non clicca abbastanza in fretta<br>
+<br>
+TRAPPOLA! L'esame distingue <em>tastiera su schermo</em> (input, sostituisce la tastiera) da <em>screen reader</em> (output, legge lo schermo). Sono cose opposte.`,
+    analogy: `La tastiera su schermo è il bancomat touch: premi i tasti sul vetro. KMouseTool è l'autista che clicca al posto tuo quando ti fermi a guardare. 🖱️` },
+
+  // ── 18. Disabilità visive (106.3) ─────────────────────────────────────────────
+  { type: 'lesson', emoji: '👁️', title: 'Accessibilità: disabilità visive',
+    text: `Regolazioni per chi vede poco — termini esatti dell'esame:<br>
+<br>
+• <strong>Contrasto elevato</strong> (High Contrast) — finestre e pulsanti con colori più nitidi<br>
+• <strong>Testo grande</strong> (Large Print) — ingrandisce il carattere di sistema<br>
+• <strong>Dimensioni cursore</strong> — cursore del mouse più grande, più facile da trovare<br>
+• <strong>Ingranditore schermo</strong> (lente/zoom): in GNOME è <em>Zoom</em>, in KDE è <strong>KMagnifier</strong>, in Xfce si ingrandisce con <code>Alt</code> + rotellina del mouse<br>
+<br>
+Per chi non può usare la vista affatto:<br>
+• <strong>Screen reader</strong> — legge lo schermo ad alta voce. Il più diffuso su Linux è <strong>Orca</strong> (installato di default su molte distro), legge il testo sotto il cursore<br>
+• <strong>Schermo braille aggiornabile</strong> (braille display) — dispositivo che solleva spilli per formare caratteri braille leggibili al tatto; Orca lo supporta<br>
+<br>
+TRAPPOLA! Distingui <strong>ingranditore</strong> (ingrandisce i pixel, per ipovedenti) da <strong>screen reader</strong> (legge ad alta voce, per non vedenti).`,
+    analogy: `Contrasto elevato e testo grande sono gli occhiali da lettura. La lente (KMagnifier) è la lente d'ingrandimento del filatelico. Orca è l'audioguida del museo: ti legge tutto mentre cammini. 👁️` },
+
+  { type: 'quiz',
+    q: 'Come si chiama l\'ingranditore dello schermo nell\'ambiente desktop KDE?',
+    opts: ['KMagnifier', 'Orca', 'onboard', 'KMouseTool'],
+    a: 0,
+    explain: `<strong>KMagnifier</strong> è la lente d'ingrandimento di KDE (in GNOME la funzione si chiama <em>Zoom</em>). <strong>Orca</strong> è lo screen reader (legge ad alta voce, non ingrandisce). <strong>onboard</strong> è la tastiera su schermo. <strong>KMouseTool</strong> simula i clic del mouse. 👁️` },
 
 ];

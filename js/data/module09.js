@@ -478,7 +478,11 @@ L'esame LPIC-1 chiede i fondamentali IPv6, non il subnetting avanzato.` },
 • <code>ping -c N</code> · <code>traceroute -n</code> · <code>ss -tlnp</code>: TCP listen<br>
 • <code>nc -zv host porta</code>: test connettività · <code>nc -l 1234</code>: server grezzo<br>
 • <code>dig dominio TIPO</code> · <code>dig +short</code> · <code>dig @8.8.8.8</code> · <code>dig -x IP</code><br>
-• systemd-networkd: file in <code>/etc/systemd/network/*.network</code> · <code>networkctl list/status/reload</code>` },
+• systemd-networkd: file in <code>/etc/systemd/network/*.network</code> · <code>networkctl list/status/reload</code><br>
+• Protocolli: <strong>TCP</strong> affidabile/connesso · <strong>UDP</strong> veloce/no garanzie · <strong>ICMP</strong> diagnostica (ping/traceroute), <strong>senza porte</strong><br>
+• Nomi interfaccia: <code>eth0</code> legacy → predictable <code>enp3s5</code> (en=eth, p3=bus, s5=slot) · <code>eno1</code> onboard · <code>wl</code>=wifi<br>
+• Debian: <code>/etc/network/interfaces</code> (<code>auto</code>+<code>iface ... inet dhcp/static</code>) · <code>ifup</code>/<code>ifdown</code> · RHEL: <code>/etc/sysconfig/network-scripts/</code><br>
+• Legacy↔moderno: <code>ifconfig</code>→<code>ip addr</code> · <code>route</code>→<code>ip route</code> · <code>netstat</code>→<code>ss</code> · <code>arp</code>→<code>ip neigh</code> · <code>tracepath</code>/<code>mtr</code>/<code>ping6</code>` },
 
   // ── 33. Quiz: finale routing ─────────────────────────────────────────────────
   { type: 'quiz', q: 'Quale comando mostra quale route viene usata per raggiungere 1.1.1.1?',
@@ -617,5 +621,120 @@ TRAPPOLA! systemd-networkd e NetworkManager NON devono girare insieme sulla stes
     ],
     a: 0,
     explain: `<code>/etc/systemd/network/</code> contiene i file <code>.network</code> (configurazione IP), <code>.netdev</code> (dispositivi virtuali) e <code>.link</code> (rinomina interfacce). <code>/etc/network/interfaces</code> è la sintassi Debian legacy. <code>/etc/sysconfig/network-scripts/</code> è RHEL legacy. <code>/etc/NetworkManager/system-connections/</code> è NetworkManager. 🔌` },
+
+  // ── ICMP (109.1) ──────────────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '📨', title: 'ICMP: il protocollo di controllo della rete',
+    text: `Oltre a <strong>TCP</strong> (affidabile, con connessione) e <strong>UDP</strong> (veloce, senza garanzie), lo stack TCP/IP ha <strong>ICMP</strong> (Internet Control Message Protocol).<br>
+<br>
+ICMP è un protocollo di <strong>livello rete</strong> che non trasporta dati applicativi: serve a <strong>controllare e diagnosticare</strong> la rete. Le sue funzioni:<br>
+• controllo del volume di traffico<br>
+• rilevamento delle destinazioni <strong>non raggiungibili</strong> (Destination Unreachable)<br>
+• reindirizzamento delle rotte (Redirect)<br>
+• controllo dello stato degli host remoti<br>
+<br>
+È il protocollo usato da <code>ping</code> (echo request/reply) e da <code>traceroute</code> per scoprire il percorso dei pacchetti.<br>
+<br>
+TRAPPOLA! ICMP <strong>non usa porte</strong>: a differenza di TCP/UDP, non ha il concetto di porta sorgente/destinazione. Per questo un firewall blocca ICMP "per protocollo", non per porta.`,
+    analogy: `Se TCP e UDP sono i corrieri che consegnano pacchi, ICMP è il servizio clienti delle Poste: non porta merce, ma ti dice "indirizzo inesistente", "strada chiusa, usa quest'altra", "il destinatario è in casa?". 📨` },
+
+  { type: 'quiz',
+    q: 'Quale affermazione su ICMP è corretta?',
+    opts: [
+      'Non usa porte ed è il protocollo dietro ping e traceroute',
+      'È un protocollo di trasporto affidabile come TCP',
+      'Usa la porta UDP 7 per gli echo',
+      'Trasporta i dati delle applicazioni web'
+    ],
+    a: 0,
+    explain: `ICMP è un protocollo di <strong>livello rete</strong> per il controllo/diagnostica: <strong>non ha porte</strong> (a differenza di TCP/UDP) ed è quello usato da <code>ping</code> (echo request/reply) e <code>traceroute</code>. Non è di trasporto e non porta dati applicativi. 📨` },
+
+  // ── Nomi di interfaccia (109.2) ───────────────────────────────────────────────
+  { type: 'lesson', emoji: '🏷️', title: 'Nomi di interfaccia: eth0 vs enp3s5',
+    text: `Le vecchie distro chiamavano le schede <code>eth0</code>, <code>eth1</code> (ethernet) e <code>wlan0</code> (wireless), numerate nell'ordine in cui il kernel le trovava. Problema: <strong>i nomi potevano cambiare a ogni riavvio</strong>.<br>
+<br>
+I sistemi moderni (systemd) usano i <strong>Predictable Network Interface Names</strong>: nomi stabili legati all'hardware. Prefissi del tipo:<br>
+• <code>en</code> = Ethernet · <code>wl</code> = WLAN (wifi) · <code>ww</code> = WWAN · <code>ib</code> = InfiniBand<br>
+<br>
+Poi un suffisso secondo come l'hardware è collegato:<br>
+• <code>eno1</code> — indice del firmware/BIOS (onboard)<br>
+• <code>ens1</code> — slot PCI Express<br>
+• <code>enp3s5</code> — posizione sul bus (p=bus, s=slot)<br>
+• <code>enx78e7d1ea46da</code> — basato sul MAC address<br>
+• <code>eth0</code> — schema <em>legacy</em><br>
+<br>
+TRAPPOLA! <code>enp3s5</code> non è un nome casuale: <strong>en</strong>=ethernet, <strong>p3</strong>=bus PCI 3, <strong>s5</strong>=slot 5. Lo ricavi da <code>lspci</code>.`,
+    analogy: `eth0 è come chiamare i figli "Primo, Secondo" in ordine di nascita: se cambia l'ordine, cambiano i nomi. enp3s5 è come dare a ognuno l'indirizzo di casa: stabile, dice esattamente dove abita (bus 3, slot 5). 🏷️` },
+
+  { type: 'quiz',
+    q: 'Perché i sistemi moderni usano nomi come enp3s5 invece di eth0?',
+    opts: [
+      'Perché sono stabili: legati alla posizione hardware, non cambiano a ogni boot',
+      'Perché eth0 è riservato solo al loopback',
+      'Perché enp3s5 è più corto da digitare',
+      'Perché eth0 funziona solo con IPv4'
+    ],
+    a: 0,
+    explain: `I <strong>Predictable Network Interface Names</strong> (es. <code>enp3s5</code>) sono derivati dalla posizione fisica dell'hardware (bus/slot PCI), quindi restano <strong>stabili</strong> tra i riavvii. Con il vecchio schema <code>eth0</code>/<code>eth1</code> due schede potevano scambiarsi il nome dopo un boot. 🏷️` },
+
+  // ── /etc/network/interfaces + ifup/ifdown (109.2) ─────────────────────────────
+  { type: 'lesson', emoji: '📝', title: 'Configurazione persistente: /etc/network/interfaces',
+    text: `Sui sistemi <strong>Debian</strong> senza NetworkManager, le interfacce si configurano nel file <code>/etc/network/interfaces</code>.<br>
+<br>
+Formato: righe <code>auto</code> (interfacce da attivare all'avvio) + righe <code>iface</code> (configurazione vera):<br>
+<code>auto lo</code><br>
+<code>iface lo inet loopback</code><br>
+<code>auto enp3s5</code><br>
+<code>iface enp3s5 inet dhcp</code><br>
+<br>
+Statico invece di DHCP:<br>
+<code>iface enp3s5 inet static</code><br>
+<code>&nbsp;&nbsp;address 192.168.1.2/24</code><br>
+<code>&nbsp;&nbsp;gateway 192.168.1.1</code><br>
+<br>
+La famiglia di indirizzi è <code>inet</code> (IPv4) o <code>inet6</code> (IPv6). I comandi per attivare/disattivare:<br>
+<code>ifup enp3s5</code> — attiva l'interfaccia leggendo il file<br>
+<code>ifdown enp3s5</code> — disattiva<br>
+<br>
+TRAPPOLA! Su <strong>RHEL/CentOS</strong> i file legacy stanno invece in <code>/etc/sysconfig/network-scripts/</code> con sintassi diversa.`,
+    analogy: `/etc/network/interfaces è la scheda di istruzioni della centralina: "lo accendi sempre, enp3s5 accendila all'avvio e chiedi l'IP al DHCP". ifup/ifdown sono gli interruttori che eseguono quelle istruzioni. 📝` },
+
+  { type: 'quiz',
+    q: 'In /etc/network/interfaces, quale riga configura enp3s5 per ottenere l\'IP automaticamente dal DHCP?',
+    opts: [
+      'iface enp3s5 inet dhcp',
+      'iface enp3s5 inet static',
+      'auto enp3s5 dhcp',
+      'iface enp3s5 inet auto'
+    ],
+    a: 0,
+    explain: `<code>iface enp3s5 inet dhcp</code> dice di configurare l'interfaccia via DHCP per IPv4 (<code>inet</code>). <code>static</code> richiede di specificare address/gateway a mano. <code>auto enp3s5</code> serve solo a marcare l'interfaccia da attivare all'avvio, non definisce il metodo. <code>inet auto</code> non è un metodo valido. 📝` },
+
+  // ── net-tools legacy vs iproute2 (109.3) ──────────────────────────────────────
+  { type: 'lesson', emoji: '🔧', title: 'net-tools legacy ↔ iproute2 moderno',
+    text: `L'esame chiede sia i comandi <strong>vecchi</strong> (pacchetto <em>net-tools</em>, deprecati) sia i <strong>nuovi</strong> (pacchetto <em>iproute2</em>). La mappatura:<br>
+<br>
+• <code>ifconfig</code> → <code>ip addr</code> / <code>ip link</code> (vedere/configurare interfacce)<br>
+• <code>route</code> → <code>ip route</code> (tabella di routing)<br>
+• <code>netstat</code> → <code>ss</code> (socket/connessioni in ascolto)<br>
+• <code>arp</code> → <code>ip neigh</code> (tabella ARP, vicini di rete)<br>
+<br>
+Altri strumenti di diagnosi del percorso:<br>
+• <code>traceroute host</code> — il percorso hop-by-hop · <code>tracepath host</code> — simile, senza root<br>
+• <code>ping6</code> / <code>traceroute6</code> — versioni IPv6<br>
+• <code>mtr host</code> — traceroute + ping continuo in tempo reale<br>
+<br>
+TRAPPOLA! <code>ifconfig</code> è deprecato perché gestisce male le interfacce non-ethernet e i sistemi moderni potrebbero non averlo installato. Impara <code>ip</code>, ma riconosci entrambi all'esame.`,
+    analogy: `net-tools e iproute2 sono il vecchio e il nuovo cruscotto della stessa auto: ifconfig/route/netstat/arp sono le manopole d'epoca, ip/ss sono il touchscreen moderno che fa tutto. L'esame ti interroga su entrambi. 🔧` },
+
+  { type: 'quiz',
+    q: 'Qual è l\'equivalente moderno (iproute2) del vecchio comando netstat per vedere le porte in ascolto?',
+    opts: [
+      'ss',
+      'ip route',
+      'ip neigh',
+      'ifconfig'
+    ],
+    a: 0,
+    explain: `<code>ss</code> (socket statistics) ha sostituito <code>netstat</code> per elencare socket e connessioni (es. <code>ss -tlnp</code> per le porte TCP in ascolto). <code>ip route</code> sostituisce <code>route</code>, <code>ip neigh</code> sostituisce <code>arp</code>, <code>ifconfig</code> è sostituito da <code>ip addr</code>. 🔧` },
 
 ];

@@ -373,7 +373,11 @@ Rank    Owner   Job  Files                Total Size
 • logrotate: rotate N, compress, daily/weekly, <code>logrotate -f</code><br>
 • <code>newaliases</code> dopo ogni modifica a /etc/aliases (ricompila aliases.db!)<br>
 • <code>~/.forward</code> — inoltro posta per utente senza root · <code>\\utente</code> mantiene copia locale<br>
-• <code>mailq</code> coda · CUPS: <code>lp</code> stampa · <code>lpstat -p</code> · <code>lpq</code> coda · <code>lprm N</code> cancella` },
+• <code>mailq</code> coda · CUPS: <code>lp</code> stampa · <code>lpstat -p</code> · <code>lpq</code> coda · <code>lprm N</code> cancella<br>
+• Fuso orario: <code>timedatectl set-timezone</code> · senza → symlink <code>/etc/localtime</code> → <code>/usr/share/zoneinfo/...</code> · <code>hwclock --systohc</code><br>
+• NTP: <code>ntpd</code> completo (serve l'ora, /etc/ntp.conf) · <code>timesyncd</code>=SNTP solo client · <code>chrony</code> (/etc/chrony.conf, <code>chronyc makestep</code>) · UDP 123<br>
+• Mail: <code>mail</code> = MUA da CLI (pacchetto mailx) · invio: <code>mail -s "ogg" dest &lt;&lt;&lt;"corpo"</code> · MUA=client (Thunderbird) vs MTA=server (Postfix)<br>
+• CUPS: <code>lpr -P NOME</code> (vs <code>lp -d</code>) · <code>lpadmin -x</code> rimuovi · <code>lpoptions -d</code> default · web+IPP porta <strong>631</strong> · <code>/etc/cups/cupsd.conf</code>` },
 
   // ── 29. Quiz: finale hwclock ──────────────────────────────────────────────────
   { type: 'quiz', q: 'Dopo aver impostato manualmente l\'ora con "date -s", quale comando aggiorna anche l\'orologio hardware (RTC)?',
@@ -482,5 +486,114 @@ journalctl -n 5
 
 # Forza logrotate (dry-run: simula senza fare nulla)
 sudo logrotate -d /etc/logrotate.conf` },
+
+  // ── 33. Fuso orario senza timedatectl (108.1) ─────────────────────────────────
+  { type: 'lesson', emoji: '🗺️', title: 'Fuso orario: con e senza timedatectl',
+    text: `Su systemd il modo preferito è <code>timedatectl</code>:<br>
+<code>timedatectl list-timezones</code> — elenca i fusi (usalo con <code>grep</code>)<br>
+<code>timedatectl set-timezone Europe/Rome</code> — imposta il fuso (nome <strong>esatto</strong>!)<br>
+<code>timedatectl set-time '2026-06-19 14:00:00'</code> — imposta data/ora se NTP è spento<br>
+<code>timedatectl set-ntp no</code> — disabilita la sincronizzazione NTP<br>
+<br>
+<strong>Senza timedatectl</strong> (sistemi vecchi, l'esame lo chiede):<br>
+• I dati dei fusi stanno in <code>/usr/share/zoneinfo/</code> (es. <code>.../Europe/Rome</code>)<br>
+• Il fuso attivo è il file <code>/etc/localtime</code>, che è un <strong>link simbolico</strong> alla zoneinfo giusta:<br>
+<code>ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime</code><br>
+• Alcune distro tengono anche <code>/etc/timezone</code> (file di testo, es. <code>Europe/Rome</code>): <code>cat /etc/timezone</code><br>
+• Dopo aver cambiato fuso: <code>hwclock --systohc</code> per allineare l'RTC<br>
+<br>
+TRAPPOLA! Il nome del fuso è case-sensitive ed esatto: <code>Europe/Rome</code> sì, <code>europe/rome</code> o <code>Rome</code> no.`,
+    analogy: `/usr/share/zoneinfo è l'atlante con tutti i fusi del mondo. /etc/localtime è il segnalibro che punta alla tua pagina. timedatectl sposta il segnalibro per te; senza, lo sposti a mano con un symlink. 🗺️` },
+
+  { type: 'quiz',
+    q: 'Su un sistema senza timedatectl, come imposti manualmente il fuso orario su Europe/Rome?',
+    opts: [
+      'ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime',
+      'echo Europe/Rome > /etc/localtime',
+      'export TZ=Europe/Rome nel kernel',
+      'hwclock --timezone Europe/Rome'
+    ],
+    a: 0,
+    explain: `<code>/etc/localtime</code> è un link simbolico al file di zona giusto in <code>/usr/share/zoneinfo/</code>. Si imposta con <code>ln -s /usr/share/zoneinfo/Europe/Rome /etc/localtime</code>. <code>/etc/localtime</code> è binario, non ci scrivi testo con echo. <code>hwclock --timezone</code> non esiste. 🗺️` },
+
+  // ── 34. NTP, SNTP e chrony (108.1) ────────────────────────────────────────────
+  { type: 'lesson', emoji: '⏱️', title: 'Le tre anime di NTP: ntpd, timesyncd, chrony',
+    text: `L'esame distingue <strong>tre</strong> implementazioni della sincronizzazione oraria:<br>
+<br>
+• <strong>ntpd</strong> — il demone NTP <em>completo</em>: la macchina può <strong>ricevere E fornire</strong> l'ora ad altri. Config in <code>/etc/ntp.conf</code>. Porta <strong>UDP 123</strong><br>
+• <strong>systemd-timesyncd</strong> — implementa solo <strong>SNTP</strong> (client semplificato): riceve l'ora ma <strong>non la serve</strong> ad altri. È quello che usa <code>timedatectl</code> di default<br>
+• <strong>chrony</strong> — alternativa moderna: <code>chronyd</code> è il demone, <code>chronyc</code> la CLI. Config in <code>/etc/chrony.conf</code><br>
+<br>
+Comandi chrony chiave:<br>
+<code>chronyc tracking</code> — stato sync (Reference ID, Stratum, System time, offset, Leap status)<br>
+<code>chronyc sources</code> — server NTP in uso<br>
+<code>chronyc makestep</code> — forza <strong>subito</strong> il salto dell'orologio (dopo <code>makestep</code> in chrony.conf)<br>
+<br>
+TRAPPOLA! Se l'offset iniziale supera i ~17 minuti, <code>ntpd</code> rifiuta di correggere a piccoli passi: serve un salto manuale con <code>ntpdate</code> (ferma prima ntpd) o <code>chronyc makestep</code>.`,
+    analogy: `ntpd è l'orologiaio che tiene l'ora giusta E la dà a tutto il paese. timesyncd è chi chiede solo l'ora al campanile senza ridarla a nessuno. chrony è l'orologiaio nuovo, più sveglio sui portatili che si spengono spesso. ⏱️` },
+
+  { type: 'quiz',
+    q: 'Qual è la differenza tra systemd-timesyncd e ntpd?',
+    opts: [
+      'timesyncd è un client SNTP che riceve l\'ora; ntpd è completo e può anche servirla ad altri',
+      'Sono identici, cambia solo il nome',
+      'timesyncd serve l\'ora in rete; ntpd è solo client',
+      'ntpd usa TCP, timesyncd usa UDP'
+    ],
+    a: 0,
+    explain: `<code>systemd-timesyncd</code> implementa <strong>SNTP</strong>: è un client leggero che sincronizza l'orologio locale ma non fa da time server. <code>ntpd</code> è l'implementazione completa: può sia ricevere sia <strong>fornire</strong> l'ora ad altri client. Entrambi usano UDP 123. ⏱️` },
+
+  // ── 35. mail e MUA (108.3) ────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '✉️', title: 'Il comando mail e i MUA',
+    text: `Il comando <code>mail</code> è di solito fornito dal pacchetto <strong>mailx</strong> (su molte distro <code>mail</code> è un symlink a <code>mailx</code>); un'alternativa è <strong>GNU Mailutils</strong>.<br>
+<br>
+Opera in <strong>due modalità</strong>:<br>
+• <strong>Modalità invio</strong> — se gli dai un indirizzo come argomento: <code>mail -s "oggetto" dave@host</code>. Il corpo arriva dallo <strong>stdin</strong> (utile negli script):<br>
+<code>mail -s "Backup fallito" admin@host &lt;&lt;&lt; "Il job è fallito"</code><br>
+• <strong>Modalità lettura</strong> — senza argomenti: elenca i messaggi numerati. Comandi interattivi abbreviati: <code>p</code> (print), <code>d</code> (delete), <code>r</code> (reply), <code>q</code> (quit)<br>
+<br>
+<strong>MUA</strong> (Mail User Agent) = il programma client di posta che l'utente usa per leggere/scrivere e che parla con l'MTA. Esempi: <strong>Thunderbird</strong>, <strong>Evolution</strong>, <strong>KMail</strong>, le <em>webmail</em>.<br>
+<br>
+TRAPPOLA! L'MUA è il <em>client</em> (Thunderbird), l'MTA è il <em>server</em> che trasporta la posta (Postfix, Sendmail, Exim). <code>mail</code> è un MUA da riga di comando.`,
+    analogy: `Il MUA è il telefono da cui chiami (Thunderbird). L'MTA è la rete telefonica che instrada la chiamata (Postfix). Il comando mail è il vecchio telefono a gettoni: spartano, ma c'è sempre. ✉️` },
+
+  { type: 'quiz',
+    q: 'In uno script di backup vuoi inviare un\'email di avviso. Quale forma del comando mail è corretta?',
+    opts: [
+      'mail -s "Avviso" admin@host <<< "Backup completato"',
+      'mail --send "Avviso" admin@host "Backup completato"',
+      'mail admin@host --subject Avviso --body "Backup completato"',
+      'echo admin@host | mail -s Backup'
+    ],
+    a: 0,
+    explain: `In modalità invio, <code>mail -s "oggetto" destinatario</code> prende il <strong>corpo dallo stdin</strong>: qui la here-string <code>&lt;&lt;&lt; "..."</code> fornisce il testo. Le altre sintassi (<code>--send</code>, <code>--body</code>) non esistono in mailx. È il modo classico per inviare notifiche automatiche dagli script. ✉️` },
+
+  // ── 36. CUPS: lpr, IPP e file di config (108.4) ───────────────────────────────
+  { type: 'lesson', emoji: '🖨️', title: 'CUPS: lpr, IPP e file di configurazione',
+    text: `Oltre a <code>lp</code> esiste il comando storico <strong>lpr</strong> (LPD/LPR):<br>
+<code>lpr report.txt</code> — invia alla stampante di default<br>
+<code>lpr -P FRONT-DESK report.txt</code> — a una stampante specifica (<code>-P</code> maiuscola!)<br>
+<code>lpr -#7 report.txt</code> — 7 copie<br>
+<code>lpr -o landscape -o media=A4 -o two-sided-long-edge file.pdf</code> — opzioni di stampa<br>
+<br>
+Amministrazione stampanti:<br>
+<code>lpadmin -p NOME -v socket://IP -m everywhere</code> — aggiungi · <code>lpadmin -x NOME</code> — <strong>rimuovi</strong><br>
+<code>lpoptions -d NOME</code> — imposta la stampante di <strong>default</strong><br>
+<code>lpmove JOB ALTRA</code> — sposta un job · <code>cupsreject NOME</code> — rifiuta nuovi job<br>
+<br>
+File e porte:<br>
+• <code>/etc/cups/cupsd.conf</code> — config del demone (sintassi tipo Apache)<br>
+• <code>/etc/cups/printers.conf</code> — le stampanti definite · <code>/etc/cups/ppd/</code> — file PPD<br>
+• <code>/etc/printcap</code> — file <em>legacy</em> LPD (CUPS lo rigenera per compatibilità)<br>
+• Interfaccia web e <strong>IPP</strong>: porta <strong>TCP 631</strong> → <code>http://localhost:631</code><br>
+<br>
+TRAPPOLA! <code>lpr</code> usa <code>-P</code> (maiuscola) per la stampante; <code>lp</code> usa <code>-d</code>. Non scambiarle.`,
+    analogy: `lpr e lp sono due dialetti per lo stesso ordine ("stampa questo"). cupsd è la tipografia, la porta 631 è lo sportello al pubblico (web + IPP), printers.conf è il registro delle macchine in officina. 🖨️` },
+
+  { type: 'quiz',
+    q: 'Su quale porta TCP ascolta l\'interfaccia web di CUPS (e il protocollo IPP)?',
+    opts: ['631', '161', '515', '9100'],
+    a: 0,
+    explain: `CUPS espone l'interfaccia web e <strong>IPP</strong> (Internet Printing Protocol) sulla porta <strong>TCP 631</strong> → <code>http://localhost:631</code>. La 515 è il vecchio LPD, la 9100 è la stampa diretta "raw" su socket (JetDirect), la 161 è SNMP. 🖨️` },
 
 ];
