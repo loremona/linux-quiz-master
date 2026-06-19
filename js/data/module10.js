@@ -215,6 +215,116 @@ reboot   system boot  6.9.3-1-cachyo Wed Jun 17 11:30   still running` },
     a: 0,
     explain: `<code>lastlog</code> legge /var/log/lastlog e mostra una riga per ogni account del sistema, anche quelli che mostrano "Never logged in". <code>last</code> mostra solo chi si è effettivamente connesso (da /var/log/wtmp). <code>lastb</code> mostra i tentativi falliti. 👁️` },
 
+  // ── /etc/nologin, /etc/securetty, chage (110.1) ─────────────────────────────
+  { type: 'lesson', emoji: '🚫', title: '/etc/nologin e /etc/securetty',
+    text: `<strong>/etc/nologin</strong>: se questo file esiste, solo root può fare login. Tutti gli altri utenti vedono il contenuto del file come messaggio e vengono bloccati. Usato durante la manutenzione.<br>
+<code>echo "Sistema in manutenzione" > /etc/nologin</code> — blocca i login<br>
+<code>rm /etc/nologin</code> — riapre i login<br>
+<br>
+<strong>/etc/securetty</strong>: lista dei terminali (TTY) da cui root può fare login diretto.<br>
+<code>tty1</code>, <code>tty2</code>... = console fisiche consentite<br>
+Se un terminale NON è in lista, root non può loggarsi da lì.<br>
+Rimuovere tutti i TTY da /etc/securetty = root può loggarsi solo via su/sudo (non direttamente).`,
+    analogy: `/etc/nologin è il cartello "CHIUSO per lavori" sulla porta del condominio: solo il portiere (root) può entrare. /etc/securetty è la lista delle porte approvate da cui può entrare. 🚫` },
+
+  { type: 'lesson', emoji: '📅', title: 'chage: scadenza delle password',
+    text: `<code>chage</code> gestisce la politica di scadenza delle password degli utenti.<br>
+<br>
+<code>chage -l alice</code> — mostra le info di scadenza di alice<br>
+<code>chage -M 90 alice</code> — <strong>M</strong>aximum: la password scade dopo 90 giorni<br>
+<code>chage -m 7 alice</code> — <strong>m</strong>inimum: non può cambiare la password per 7 giorni<br>
+<code>chage -W 14 alice</code> — <strong>W</strong>arning: avvisa 14 giorni prima della scadenza<br>
+<code>chage -E 2026-12-31 alice</code> — <strong>E</strong>xpire: l'account scade a quella data<br>
+<code>chage -d 0 alice</code> — forza il cambio password al prossimo login<br>
+<br>
+Le stesse info si trovano nei campi 3-8 di <code>/etc/shadow</code>.`,
+    analogy: `chage è il calendario del responsabile HR: decide quando la password dell'utente scade, per quanto non può cambiarla, e quando l'account stesso viene disattivato. 📅` },
+
+  { type: 'quiz', q: 'Vuoi bloccare temporaneamente i login di tutti gli utenti (tranne root) per manutenzione. Cosa fai?',
+    opts: [
+      'Crea il file /etc/nologin con un messaggio',
+      'Modifica /etc/securetty rimuovendo tutti i TTY',
+      'Imposta PermitRootLogin no in sshd_config',
+      'Esegui systemctl stop login.service',
+    ],
+    a: 0,
+    explain: `Creare <code>/etc/nologin</code> (anche vuoto) blocca immediatamente i login di tutti gli utenti non-root. Il file può contenere un messaggio mostrato agli utenti. Per riabilitare: <code>rm /etc/nologin</code>. /etc/securetty controlla invece da dove root può loggarsi. 🚫` },
+
+  { type: 'quiz', q: 'Quale comando forza alice a cambiare la password AL PROSSIMO LOGIN?',
+    opts: ['chage -d 0 alice', 'chage -E 0 alice', 'passwd -e alice', 'usermod -L alice'],
+    a: 0,
+    explain: `<code>chage -d 0 alice</code> imposta la data dell'ultimo cambio password a "0" (l'epoch, 1970-01-01): il sistema considera la password scaduta e la forza al cambio. Anche <code>passwd -e alice</code> (expire) è equivalente su molte distro. <code>-E 0</code> disabiliterebbe l'account completamente. 📅` },
+
+  // ── SUPERDAEMON: inetd e xinetd (110.2) ──────────────────────────────────────
+  { type: 'lesson', emoji: '👮', title: 'Il superdaemon: inetd e xinetd',
+    text: `Approccio tradizionale: ogni servizio di rete ha il suo daemon sempre in esecuzione (sshd, ftpd, telnetd…). Spreco di RAM se i servizi vengono usati raramente.<br>
+<br>
+<strong>Superdaemon</strong>: un singolo processo (<code>inetd</code> o <code>xinetd</code>) resta in ascolto su molte porte; quando arriva una connessione, lancia il servizio appropriato <strong>su richiesta</strong>.<br>
+<br>
+• <code>inetd</code> — l'originale "Internet Daemon" · config: <code>/etc/inetd.conf</code><br>
+• <code>xinetd</code> — successore extended: più sicuro, più configurabile · config: <code>/etc/xinetd.conf</code> + dir <code>/etc/xinetd.d/</code>`,
+    analogy: `inetd è il centralinista del palazzo: dorme sulla sedia, ma quando squilla il telefono per la porta 21 (ftp) sveglia il servizio corretto — poi torna a dormire. Nessun daemon in piedi inutilmente. 📞` },
+
+  { type: 'lesson', emoji: '📋', title: '/etc/inetd.conf: il registro delle porte',
+    text: `Ogni riga di <code>/etc/inetd.conf</code> descrive un servizio gestito da inetd:<br>
+<code>servizio  tipo-socket  protocollo  wait/nowait  utente  server  args</code><br>
+<br>
+Esempi:<br>
+<code>ftp    stream  tcp  nowait  root  /usr/sbin/ftpd  ftpd -l</code><br>
+<code>telnet stream  tcp  nowait  root  /usr/sbin/telnetd  telnetd</code><br>
+<br>
+• <strong>wait</strong> — sequenziale: una connessione alla volta (es. tftp UDP)<br>
+• <strong>nowait</strong> — parallelo: una nuova istanza per ogni connessione<br>
+<br>
+I servizi inetd si integrano automaticamente con <strong>TCP Wrappers</strong> (/etc/hosts.allow + hosts.deny).`,
+    analogy: `inetd.conf è il mansionario del centralinista: "squilla porta 21? chiama ftpd. porta 23? chiama telnetd". Ogni riga è un'istruzione precisa. 📋` },
+
+  { type: 'lesson', emoji: '⚙️', title: 'xinetd: la versione potenziata',
+    text: `<code>xinetd</code> usa <code>/etc/xinetd.d/</code> (un file per servizio). Esempio <code>/etc/xinetd.d/ftp</code>:<br>
+<code>service ftp {<br>
+&nbsp;&nbsp;socket_type = stream<br>
+&nbsp;&nbsp;protocol    = tcp<br>
+&nbsp;&nbsp;wait        = no<br>
+&nbsp;&nbsp;user        = root<br>
+&nbsp;&nbsp;server      = /usr/sbin/ftpd<br>
+&nbsp;&nbsp;disable     = no<br>
+}</code><br>
+<br>
+• <code>disable = yes</code> — disabilita il servizio (senza cancellare il file)<br>
+• <code>disable = no</code> — abilita<br>
+• Config globale in <code>/etc/xinetd.conf</code> (include <code>includedir /etc/xinetd.d</code>)`,
+    analogy: `xinetd rispetto a inetd è come passare da un post-it a una scheda cliente dettagliata: ogni servizio ha i suoi parametri, limiti di accesso e log. ⚙️` },
+
+  { type: 'quiz', q: 'Cos\'è un "superdaemon" nel contesto di Linux?',
+    opts: [
+      'Un daemon con priorità massima (niceness -20)',
+      'Un daemon che ascolta su molte porte e avvia i servizi su richiesta',
+      'Un daemon che gestisce l\'avvio del sistema (come systemd)',
+      'Un daemon che sostituisce il kernel in modalità emergenza',
+    ],
+    a: 1,
+    explain: `Il superdaemon (inetd/xinetd) ascolta su molte porte e, quando arriva una connessione, avvia il servizio appropriato <strong>on demand</strong>. I servizi non girano sempre: vengono creati all'occorrenza. Risparmia risorse rispetto ad avere un daemon dedicato per ogni servizio sempre in esecuzione. 👮` },
+
+  { type: 'quiz', q: 'In /etc/inetd.conf, cosa significa "nowait" nel quarto campo?',
+    opts: [
+      'Il daemon si avvia istantaneamente senza ritardo',
+      'inetd crea una nuova istanza del servizio per ogni connessione in parallelo',
+      'Il servizio non richiede autenticazione prima di rispondere',
+      'Il servizio usa UDP invece di TCP',
+    ],
+    a: 1,
+    explain: `<strong>nowait</strong>: inetd non aspetta che l'istanza corrente finisca — crea un nuovo processo per ogni connessione in parallelo. <strong>wait</strong>: inetd aspetta che il processo finisca prima di accettare la prossima connessione (usato per servizi sequenziali come tftp su UDP). 📋` },
+
+  { type: 'quiz', q: 'In xinetd, come disabiliti un servizio senza rimuovere il suo file di configurazione?',
+    opts: [
+      'Imposta "disable = yes" nel blocco di configurazione',
+      'Rinomina il file con estensione .disabled',
+      'Imposta "active = no" nel file',
+      'Commenta tutte le righe con #',
+    ],
+    a: 0,
+    explain: `In xinetd, <code>disable = yes</code> nel blocco di configurazione disabilita il servizio mantenendo il file intatto. <code>disable = no</code> lo riabilita. Dopo la modifica, ricarica con <code>systemctl reload xinetd</code>. Non esiste "active = no" nella sintassi xinetd. ⚙️` },
+
   // ── 17. TCP Wrappers ─────────────────────────────────────────────────────────
   { type: 'lesson', emoji: '🚧', title: 'TCP Wrappers: allow e deny',
     text: `<strong>TCP Wrappers</strong> è un sistema di controllo accessi per i servizi di rete (storico, ma nell'esame LPIC-1).<br>
@@ -364,6 +474,50 @@ Il file di configurazione <strong>client</strong> SSH: <code>~/.ssh/config</code
     a: 0,
     explain: `<code>PermitRootLogin no</code> è la direttiva standard. Le altre opzioni non esistono in sshd_config con quella sintassi. Dopo la modifica, ricarica con <code>systemctl reload sshd</code>. Valori possibili: no, yes, prohibit-password (solo chiavi), forced-commands-only. 🛡️` },
 
+  // ── SSH TUNNELS (110.3) ──────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🚇', title: 'SSH tunneling: traffico cifrato ovunque',
+    text: `SSH può instradare qualsiasi traffico TCP attraverso una connessione cifrata. Tre modalità:<br>
+<br>
+<strong>-L local forwarding</strong> — porti una porta remota in locale:<br>
+<code>ssh -L 8080:server-interno:80 jumpbox</code><br>
+→ accedi a <code>localhost:8080</code> sul tuo PC, il traffico finisce su server-interno:80 via jumpbox<br>
+<br>
+<strong>-R remote forwarding</strong> — esponi una porta locale sul server remoto:<br>
+<code>ssh -R 9090:localhost:3000 server</code><br>
+→ chiunque sul server raggiunge <code>server:9090</code> e arriva al tuo <code>localhost:3000</code><br>
+<br>
+<strong>-D dynamic forwarding (SOCKS proxy)</strong>:<br>
+<code>ssh -D 1080 server</code><br>
+→ crea un proxy SOCKS5 locale sulla porta 1080 — instrada tutto attraverso server<br>
+<br>
+Opzioni utili: <code>-N</code> (non eseguire comandi, solo tunnel) · <code>-f</code> (vai in background)`,
+    analogy: `-L è il tunnel sotto le Alpi: sei in Italia, ma arrivi direttamente in Francia. -R è il senso contrario. -D è il taxi VPN: tutto il traffico passa per il server. 🚇` },
+
+  { type: 'quiz', q: 'Vuoi accedere a un database interno (db:5432) tramite un jumpbox. Tunnel locale?',
+    opts: [
+      'ssh -L 5432:db:5432 jumpbox',
+      'ssh -R 5432:db:5432 jumpbox',
+      'ssh -D 5432 jumpbox',
+      'ssh -f db:5432 jumpbox',
+    ],
+    a: 0,
+    explain: `<code>ssh -L 5432:db:5432 jumpbox</code>: apri la porta 5432 sul tuo localhost, il traffico viene instradato attraverso jumpbox verso db:5432. Poi connetti il tuo client PostgreSQL a <code>localhost:5432</code>. <code>-R</code> farebbe il contrario (espone una tua porta sul server). 🚇` },
+
+  { type: 'quiz', q: 'Quale opzione SSH crea un proxy SOCKS5 dinamico sulla porta 1080?',
+    opts: ['-L 1080', '-R 1080', '-D 1080', '-P 1080'],
+    a: 2,
+    explain: `<code>ssh -D 1080 server</code> crea un proxy SOCKS5 locale: tutto il traffico configurato a usare proxy <code>localhost:1080</code> passa cifrato attraverso il server SSH. Utile per navigare attraverso una rete remota. Aggiunta <code>-N</code> per non aprire una shell. 🧦` },
+
+  { type: 'quiz', q: 'Cosa fa l\'opzione -N in una connessione SSH con tunnel?',
+    opts: [
+      'Disabilita l\'autenticazione con password',
+      'Non esegue comandi remoti: apre solo il tunnel',
+      'Apre il tunnel in background',
+      'Crea il tunnel in modalità non interattiva (no TTY)',
+    ],
+    a: 1,
+    explain: `<code>-N</code> = <strong>N</strong>o remote command: la connessione SSH si apre ma non esegue nessuna shell remota — serve solo per il forwarding delle porte. <code>-f</code> manda il processo in background. Combo tipica: <code>ssh -N -f -L 8080:server:80 jumpbox</code>. 🚇` },
+
   // ── 26. GPG: crittografia asimmetrica ────────────────────────────────────────
   { type: 'lesson', emoji: '🔒', title: 'GPG: firma e cifratura',
     text: `<strong>GPG</strong> (GNU Privacy Guard) implementa la crittografia a chiave pubblica per file ed email.<br>
@@ -439,9 +593,13 @@ Il salt è diverso per ogni utente: anche se due utenti hanno la stessa password
 • Sticky: <code>t</code> finale, solo proprietario elimina file · <code>/tmp</code> · <code>chmod 1777</code><br>
 • <code>ulimit -n</code> max file aperti · soft/hard · persistenza in /etc/security/limits.conf<br>
 • <code>who</code>/<code>w</code> sessioni attive · <code>last</code> storico (wtmp) · <code>lastb</code> fail (btmp) · <code>lastlog</code> tutti<br>
+• <code>/etc/nologin</code> blocca login non-root · <code>/etc/securetty</code> TTY consentiti a root<br>
+• <code>chage -M 90 -W 14 -d 0 utente</code> · scadenza password e account<br>
+• inetd/xinetd: superdaemon on-demand · <code>/etc/inetd.conf</code> · <code>/etc/xinetd.d/</code> · disable=yes<br>
 • TCP wrappers: allow → deny → default allow · metti <code>ALL:ALL</code> in deny per bloccare tutto<br>
 • SSH: chiave pubblica → authorized_keys sul server · <code>ssh-keygen -t ed25519</code><br>
 • <code>PermitRootLogin no</code> in sshd_config · <code>PasswordAuthentication no</code><br>
+• SSH tunnels: <code>-L</code> local · <code>-R</code> remote · <code>-D</code> SOCKS proxy · <code>-N</code> no command<br>
 • GPG: <code>--encrypt --recipient</code> cifra · <code>--sign</code> firma · <code>--verify</code> verifica · <code>--decrypt</code>` },
 
   // ── 33. Quiz: SUID vs SGID ────────────────────────────────────────────────────
