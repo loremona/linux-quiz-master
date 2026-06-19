@@ -520,4 +520,64 @@ Salvato in: <code>~/.bash_history</code> (scritto all'uscita della sessione)<br>
   a: 0,
   explain: `Le <strong>virgolette singole</strong> rendono tutto letterale: <code>$PREZZO</code> NON viene espanso. Stampa esattamente <code>Il prezzo è $PREZZO</code>. Con le doppie virgolette <code>"$PREZZO"</code> verrebbe espanso (stamperebbe il valore o stringa vuota se non definita). ⏱️` },
 
+// ── 103.3 extra: tar + compressione ──────────────────────────────────────────
+{ type: 'lesson', emoji: '📦', title: 'tar: impacchetta e comprimi',
+  text: `<code>tar</code> è il coltellino svizzero degli archivi Linux. La logica: <strong>operazione + opzioni + file</strong>.<br>
+<br>
+<strong>Creare un archivio:</strong><br>
+<code>tar -cvf archivio.tar dir/</code> — <strong>c</strong>reate + <strong>v</strong>erbose + <strong>f</strong>ile<br>
+<code>tar -czf archivio.tar.gz dir/</code> — + comprimi con <strong>gzip</strong> (.gz)<br>
+<code>tar -cjf archivio.tar.bz2 dir/</code> — + comprimi con <strong>bzip2</strong> (.bz2)<br>
+<code>tar -cJf archivio.tar.xz dir/</code> — + comprimi con <strong>xz</strong> (.xz, J maiuscola)<br>
+<br>
+<strong>Estrarre:</strong><br>
+<code>tar -xvf archivio.tar</code> — e<strong>x</strong>tract<br>
+<code>tar -xzf archivio.tar.gz</code> — estrai + decomprimi gzip<br>
+<code>tar -xjf archivio.tar.bz2</code> — estrai + decomprimi bzip2<br>
+<br>
+<strong>Elencare contenuto (senza estrarre):</strong><br>
+<code>tar -tvf archivio.tar</code> — lis<strong>t</strong>`,
+  analogy: `tar è il traslocatore: impacchetta tutto in scatole. Le lettere dopo il trattino sono come le istruzioni del trasloco: -c = metti in scatola, -x = togli dalla scatola, -t = guarda cosa c'è, -z/-j/-J = usa il cassetto sotto-vuoto. 📦` },
+
+{ type: 'lesson', emoji: '🗜️', title: 'Compressione: gzip, bzip2, xz e come leggerli',
+  text: `Tre standard di compressione per file singoli:<br>
+<br>
+<code>gzip file</code> → <code>file.gz</code> · <code>gunzip file.gz</code> → <code>file</code><br>
+<code>bzip2 file</code> → <code>file.bz2</code> · <code>bunzip2 file.bz2</code><br>
+<code>xz file</code> → <code>file.xz</code> · <code>unxz file.xz</code><br>
+<br>
+<strong>Leggere file compressi SENZA decomprimere:</strong><br>
+<code>zcat file.gz</code> — come cat ma per .gz<br>
+<code>bzcat file.bz2</code> — come cat ma per .bz2<br>
+<code>xzcat file.xz</code> — come cat ma per .xz<br>
+<br>
+<strong>Checksum (integrità file):</strong><br>
+<code>md5sum file</code> — 128-bit (veloce, meno sicuro)<br>
+<code>sha256sum file</code> — 256-bit (standard moderno)<br>
+<code>sha512sum file</code> — 512-bit (più sicuro)<br>
+<code>md5sum -c file.md5</code> — verifica i checksum di un file .md5`,
+  analogy: `gzip è il sacco dell'aspirapolvere: schiaccia il volume ma devi aprirlo per leggere. zcat è una finestrina sul sacco: guardi dentro senza aprire. Il checksum è il sigillo di garanzia sul pacco: se è rotto, qualcuno ha manomesso i dati. 🗜️` },
+
+{ type: 'quiz',
+  q: 'Vuoi creare un archivio tar compresso con gzip della directory /etc. Quale comando?',
+  opts: [
+    'tar -czf backup.tar.gz /etc',
+    'tar -cjf backup.tar.gz /etc',
+    'tar -xzf backup.tar.gz /etc',
+    'gzip -c /etc > backup.tar.gz'
+  ],
+  a: 0,
+  explain: `<code>-c</code> = create, <code>-z</code> = gzip, <code>-f</code> = nome file. Insieme: <code>tar -czf</code>. L'estensione <code>.tar.gz</code> (o <code>.tgz</code>) è la convenzione. <code>-j</code> sarebbe bzip2 (produce .tar.bz2). <code>-x</code> è extract (decomprime, non crea). 📦` },
+
+{ type: 'quiz',
+  q: 'Quale comando verifica l\'integrità di un file scaricato confrontandolo con il suo SHA256?',
+  opts: [
+    'sha256sum -c checksums.sha256',
+    'md5sum -v file.iso',
+    'sha256sum --verify file.iso',
+    'checksum file.iso'
+  ],
+  a: 0,
+  explain: `<code>sha256sum -c checksums.sha256</code> legge il file di checksum (formato: "hash  nomefile") e verifica ogni file elencato. Risposta <code>OK</code> = file integro. <code>md5sum -v</code> non esiste. <code>sha256sum --verify</code> non è la sintassi corretta. 🗜️` },
+
 ];
