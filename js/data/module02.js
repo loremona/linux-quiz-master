@@ -55,6 +55,71 @@ const MODULE02 = [
   a: 1,
   explain: `<strong>PV → VG → LV</strong>: i dischi fisici (PV) si uniscono in una piscina (VG), dalla quale ritagli i volumi logici (LV) dove crei i filesystem. Mattoni → piscina → fette elastiche. 🧱🏊🧊` },
 
+// ── LVM: comandi operativi (102.1) ───────────────────────────────────────────
+{ type: 'lesson', emoji: '🧙‍♂️', title: 'LVM: creare lo stack da zero',
+  text: `I comandi per costruire l'infrastruttura LVM (richiede root):<br><br>
+  <code>pvcreate /dev/sdb</code> — inizializza /dev/sdb come Physical Volume<br>
+  <code>pvcreate /dev/sdb /dev/sdc</code> — inizializza più dischi insieme<br>
+  <code>vgcreate vg_dati /dev/sdb /dev/sdc</code> — crea il Volume Group dalla piscina<br>
+  <code>lvcreate -L 50G -n lv_home vg_dati</code> — crea un Logical Volume da 50 GB<br>
+  <code>lvcreate -l 100%FREE -n lv_home vg_dati</code> — usa tutto lo spazio disponibile<br>
+  <br>
+  Poi formatta e monta come un disco normale:<br>
+  <code>mkfs.ext4 /dev/vg_dati/lv_home</code>`,
+  analogy: `pvcreate prepara i mattoni, vgcreate versa il calcestruzzo nella vasca, lvcreate taglia le fette dalla vasca. L'ordine non si può invertire: mattoni → vasca → fette. 🧱🏊🧊` },
+
+{ type: 'lesson', emoji: '📊', title: 'LVM: visualizzare e modificare',
+  text: `<strong>Visualizzare lo stato LVM:</strong><br>
+  <code>pvs</code> — riepilogo PV · <code>pvdisplay</code> — dettaglio completo<br>
+  <code>vgs</code> — riepilogo VG · <code>vgdisplay</code> — dettaglio VG<br>
+  <code>lvs</code> — riepilogo LV · <code>lvdisplay</code> — dettaglio LV<br>
+  <br>
+  <strong>Estendere un volume (senza perdita dati):</strong><br>
+  <code>vgextend vg_dati /dev/sdd</code> — aggiungi /dev/sdd alla piscina<br>
+  <code>lvextend -L +20G /dev/vg_dati/lv_home</code> — allarga l'LV di 20 GB<br>
+  <code>resize2fs /dev/vg_dati/lv_home</code> — fai sapere al filesystem ext4 che è più grande<br>
+  (<code>xfs_growfs /home</code> — equivalente per XFS)<br>
+  <br>
+  TRAPPOLA! <code>lvextend</code> allarga solo il volume logico: il <strong>filesystem</strong> non sa ancora niente — devi fare anche <code>resize2fs</code>!`,
+  analogy: `lvextend è come ampliare la stanza abbattendo un muro. resize2fs è avvisare i coinquilini: "hey, la stanza è più grande, potete usare quello spazio!". Senza l'avviso, mettono ancora i mobili nella stanza vecchia. 🏠` },
+
+{ type: 'terminal', emoji: '📊', title: 'LVM: vgs e lvs in azione',
+  cmd: 'vgs && echo "---" && lvs',
+  out: `  VG       #PV #LV #SN Attr   VSize   VFree
+  vg_dati    2   2   0 wz--n- 1.82t 200.00g
+---
+  LV       VG       Attr       LSize  Pool Origin Snap%  Move Log
+  lv_home  vg_dati  -wi-ao---- 200.00g
+  lv_root  vg_dati  -wi-ao---- <1.63t` },
+
+{ type: 'quiz',
+  q: 'Qual è l\'ordine CORRETTO per creare lo stack LVM su un disco nuovo?',
+  opts: [
+    'lvcreate → vgcreate → pvcreate',
+    'pvcreate → vgcreate → lvcreate',
+    'vgcreate → pvcreate → lvcreate',
+    'pvcreate → lvcreate → vgcreate',
+  ],
+  a: 1,
+  explain: `<strong>PV → VG → LV</strong>: prima inizializzi il disco fisico come PV, poi crei il Volume Group dalla piscina, infine tagli i Logical Volume dalla piscina. È lo stesso ordine della struttura concettuale: mattoni → vasca → fette. 🧱🏊🧊` },
+
+{ type: 'quiz',
+  q: 'Hai esteso un LV con "lvextend -L +10G /dev/vg0/home". Il sistema segnala ancora lo spazio vecchio. Perché?',
+  opts: [
+    'Manca il reboot: lvextend richiede riavvio',
+    'Bisogna eseguire resize2fs (o xfs_growfs) per far crescere il filesystem',
+    'Serve prima smontare /home e poi estendere',
+    'lvextend non può crescere più di 5G alla volta',
+  ],
+  a: 1,
+  explain: `<code>lvextend</code> allarga il blocco logico ma il filesystem (ext4, xfs...) non lo sa ancora. Serve <code>resize2fs /dev/vg0/home</code> (ext4) o <code>xfs_growfs /home</code> (xfs). Con <code>lvextend -r</code> (resize) puoi fare entrambi in un colpo. Nessun riavvio richiesto. 📊` },
+
+{ type: 'quiz',
+  q: 'Quale comando mostra un riepilogo SINTETICO di tutti i Volume Group del sistema?',
+  opts: ['vgdisplay', 'vgs', 'pvs', 'lvdisplay --vg'],
+  a: 1,
+  explain: `<code>vgs</code> mostra una riga per VG con nome, numero PV/LV, dimensione totale e spazio libero. <code>vgdisplay</code> è il dettaglio completo (molte righe per VG). <code>pvs</code> è per i Physical Volume. <code>lvdisplay --vg</code> non esiste come opzione. 📊` },
+
 // ── Bootloader install ───────────────────────────────────────────────────────
 { type: 'lesson', emoji: '🔧', title: 'Installare GRUB (sul serio)',
   text: `Due comandi, due ruoli — non confonderli:<br><br>
