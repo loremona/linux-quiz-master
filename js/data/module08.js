@@ -343,7 +343,8 @@ Rank    Owner   Job  Files                Total Size
   // ── 28. Ripasso Lampo ─────────────────────────────────────────────────────────
   { type: 'lesson', emoji: '🧩', title: '🧩 RIPASSO LAMPO — Modulo 8',
     text: `• <code>hwclock --hctosys</code> (hardware→sistema) · <code>--systohc</code> (sistema→hardware)<br>
-• <code>timedatectl set-ntp true</code> · <code>chronyc tracking</code> · NTP implementazioni: ntpd, chronyd, systemd-timesyncd<br>
+• <code>timedatectl set-ntp true</code> · <code>chronyc tracking</code> · NTP: ntpd, chronyd, systemd-timesyncd<br>
+• <code>ntpq -p</code> mostra server NTP e stratum · <code>ntpdate pool.ntp.org</code> sync one-shot · <code>/etc/ntp.conf</code> config<br>
 • <code>journalctl -b</code> boot · <code>-u servizio</code> · <code>-p err</code> · <code>-f</code> follow · <code>-n 50</code> ultime 50<br>
 • Livelli syslog: 0=emerg 1=alert 2=crit 3=err 4=warning 5=notice 6=info 7=debug<br>
 • Debian: syslog + auth.log · RHEL: messages + secure<br>
@@ -411,7 +412,32 @@ sudo timedatectl set-ntp true
 # Sincronizza hardware clock dal sistema
 sudo hwclock --systohc` },
 
-  // ── 33. Missione: log e rotazione ─────────────────────────────────────────────
+  // ── 33. ntpq e ntpdate ───────────────────────────────────────────────────────
+  { type: 'lesson', emoji: '🔭', title: 'ntpq e ntpdate: monitorare e sincronizzare NTP',
+    text: `<strong>ntpq -p</strong> — interroga il demone ntpd e mostra lo stato dei server NTP in uso:<br>
+<code>ntpq -p</code><br>
+Output: <code>remote  refid  st  t  when  poll  reach  delay  offset  jitter</code><br>
+• <code>st</code> = stratum (1=vicino all'orologio atomico, 2=server pubblici, ...)<br>
+• <code>offset</code> = differenza in ms tra orologio locale e server NTP<br>
+• <code>*</code> davanti al server = sorgente selezionata attualmente<br>
+• <code>+</code> davanti al server = candidato alternativo<br>
+<br>
+<strong>ntpdate</strong> — sincronizzazione one-shot (utile prima di avviare ntpd):<br>
+<code>sudo ntpdate pool.ntp.org</code> — forza sync immediata<br>
+TRAPPOLA! Se l'offset è &gt;17 min, ntpd non corregge automaticamente: fermalo con <code>systemctl stop ntpd</code>, poi usa ntpdate, poi riavvia ntpd.<br>
+<br>
+<strong>/etc/ntp.conf</strong> — configura i server NTP per ntpd:<br>
+<code>server 0.pool.ntp.org iburst</code><br>
+<code>server 1.pool.ntp.org iburst</code>`,
+    analogy: `ntpq -p è come guardare il display di un GPS: vedi quanti satelliti (server NTP) stai usando e quanto è precisa la tua posizione (offset). ntpdate è il reset manuale quando l'orologio è troppo indietro per correggersi da solo.` },
+
+  // ── 34. Quiz: ntpq ───────────────────────────────────────────────────────────
+  { type: 'quiz', q: 'Quale comando mostra i server NTP attivi e il loro stratum con il demone ntpd?',
+    opts: ['ntpq -p', 'chronyc sources', 'timedatectl show-timesync', 'ntpdate -q'],
+    a: 0,
+    explain: `<code>ntpq -p</code> ("peers") interroga il demone ntpd e mostra i server NTP selezionati, il loro stratum, offset e jitter. <code>chronyc sources</code> è l'equivalente per chronyd. <code>ntpdate -q</code> esegue una query senza aggiornare il clock. Il simbolo * nell'output di ntpq -p indica il server correntemente selezionato. 🔭` },
+
+  // ── 35. Missione: log e rotazione ─────────────────────────────────────────────
   { type: 'mission', emoji: '🎯', title: 'Missione: ispeziona i log di sistema',
     text: `Esplora /var/log, vedi la configurazione di logrotate e prova a scrivere un log manualmente.`,
     solution: `# Cosa c'è in /var/log?
