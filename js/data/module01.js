@@ -267,6 +267,47 @@ nvme0n1     259:0    0 931.5G  0 disk
   a: 1,
   explain: `<code>/proc/cpuinfo</code> è il file virtuale con tutti i dettagli della CPU (il comando <code>lscpu</code> legge in gran parte da lì). /proc è la bacheca del kernel: anche <code>/proc/meminfo</code> per la RAM funziona così. 🧠` },
 
+// ── Hardware: lspci e lsusb (101.1) ─────────────────────────────────────────
+{ type: 'lesson', emoji: '🖥️', title: 'lspci e lsusb: radiografia dell\'hardware',
+  text: `Due comandi fondamentali per inventariare l'hardware del sistema:<br><br>
+  <strong>lspci</strong> — elenca i dispositivi sul bus PCI:<br>
+  <code>lspci</code> — lista compatta di tutti i dispositivi PCI<br>
+  <code>lspci -v</code> — dettagli estesi · <code>lspci -vv</code> — ancora più dettagli<br>
+  <code>lspci -k</code> — mostra il modulo kernel usato per ogni dispositivo<br>
+  <code>lspci -n</code> — mostra vendor ID:device ID numerici (utile per identificare l'hardware sconosciuto)<br>
+  <br>
+  <strong>lsusb</strong> — elenca i dispositivi USB:<br>
+  <code>lsusb</code> — lista di tutti i dispositivi USB<br>
+  <code>lsusb -v</code> — dettagli estesi<br>
+  <code>lsusb -t</code> — albero gerarchico bus USB (hub e dispositivi collegati)<br>
+  <br>
+  Entrambi leggono da <code>/sys</code> e <code>/proc</code>. Richiedono il pacchetto <code>pciutils</code> (lspci) e <code>usbutils</code> (lsusb).`,
+  analogy: `lspci è come aprire il cofano della macchina e leggere le etichette di ogni componente. lsusb è il pannello delle prese USB: vedi in quale slot è inserita ogni chiavetta, ogni mouse, ogni hub. 🖥️` },
+
+{ type: 'terminal', emoji: '🖥️', title: 'lspci e lsusb in azione',
+  cmd: 'lspci | head -5 && echo "---" && lsusb',
+  out: `00:00.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Renoir/Cezanne Root Complex
+00:00.2 IOMMU: Advanced Micro Devices, Inc. [AMD] Renoir/Cezanne IOMMU
+00:01.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Renoir PCIe Dummy Host Bridge
+00:08.0 Host bridge: Advanced Micro Devices, Inc. [AMD] Renoir PCIe Dummy Host Bridge
+00:14.0 SMBus: Advanced Micro Devices, Inc. [AMD] FCH SMBus Controller
+---
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 001 Device 002: ID 046d:c52b Logitech, Inc. Unifying Receiver
+Bus 002 Device 001: ID 1d6b:0003 Linux Foundation 3.0 root hub` },
+
+{ type: 'quiz',
+  q: 'Quale comando mostra l\'elenco dei dispositivi PCI e il modulo kernel utilizzato da ciascuno?',
+  opts: ['lspci -k', 'lsmod -pci', 'lspci -m', 'modinfo --pci'],
+  a: 0,
+  explain: `<code>lspci -k</code> mostra per ogni dispositivo PCI il driver kernel (<em>Kernel driver in use</em>) e i moduli caricati. Perfetto per verificare che una scheda di rete o video stia usando il driver corretto. <code>lsmod</code> lista i moduli caricati ma non li associa ai dispositivi PCI. 🖥️` },
+
+{ type: 'quiz',
+  q: 'Quale opzione di lsusb mostra la struttura ad albero del bus USB con gli hub e i dispositivi?',
+  opts: ['lsusb -t', 'lsusb -v', 'lsusb --tree', 'lsusb -a'],
+  a: 0,
+  explain: `<code>lsusb -t</code> stampa un albero gerarchico: root hub → hub → dispositivi. Utile per capire quanta banda è condivisa e a quale hub è collegato ogni dispositivo. <code>-v</code> mostra i dettagli estesi di ogni dispositivo (molte righe). <code>--tree</code> e <code>-a</code> non esistono come opzioni valide. 🖥️` },
+
 // ── Moduli kernel ────────────────────────────────────────────────────────────
 { type: 'lesson', emoji: '🧱', title: 'Moduli kernel: i LEGO',
   text: `Il kernel non carica tutto subito: i driver sono <strong>moduli</strong> caricabili al volo (file <code>.ko</code> = kernel object).<br><br>
