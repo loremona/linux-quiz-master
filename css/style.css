@@ -187,6 +187,20 @@ body.light-theme .search-result { background: #fff; border-color: #c8ccee; }
 }
 .analogy::before { content: "🐒 Per la scimmia: "; font-weight: 800; color: var(--accent2); }
 
+/* card RIPASSO LAMPO (recap dinamico alla riapertura del modulo) */
+.card.recap { background: radial-gradient(circle at 70% 12%, #142a4a 0%, var(--bg) 70%); }
+.recap-list { margin-top: 18px; display: flex; flex-direction: column; gap: 8px; }
+.recap-item {
+  display: flex; align-items: center; gap: 10px;
+  background: rgba(124, 92, 255, .10); border-left: 4px solid var(--accent);
+  border-radius: 0 12px 12px 0; padding: 10px 14px;
+  font-size: 1rem; font-weight: 600; color: #e6e8ff;
+}
+.recap-item .recap-ico { font-size: 1.2rem; flex-shrink: 0; }
+.recap-more { font-size: .9rem; color: var(--muted); padding: 4px 4px 0; font-style: italic; }
+.recap-btn { margin-top: 22px; }
+body.light-theme .recap-item { background: rgba(124, 92, 255, .08); color: #2a2d52; }
+
 /* card tipo FACT */
 .card.fact { background: radial-gradient(circle at 30% 20%, #2b1f5e 0%, var(--bg) 70%); }
 .fact-label { display: inline-block; background: var(--gold); color: #1a1400; font-weight: 900; font-size: .72rem; letter-spacing: 1.5px; padding: 5px 12px; border-radius: 999px; margin-bottom: 16px; }

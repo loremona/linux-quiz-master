@@ -291,6 +291,7 @@ let examTimerSec = 0;
 let examTimerInterval = null;
 let flashMode = false;
 let quizDrillMode = false;
+let feedOffset = 0;   // n. di card sintetiche prima delle card reali (es. ripasso lampo)
 
 function openModule(mod) {
   $('searchInput').value = '';
@@ -302,10 +303,10 @@ function openModule(mod) {
   feedEl.classList.remove('hidden');
   renderCards(mod);
   renderFeedXp();
-  // riprendi da dove eri
+  // se c'è il ripasso lampo (feedOffset>0) atterri su di esso; altrimenti riprendi da dove eri
   const at = state.modules[mod.id].done ? 0 : (state.modules[mod.id].card || 0);
   requestAnimationFrame(() => {
-    cardsEl.scrollTo({ top: at * cardsEl.clientHeight, behavior: 'instant' });
+    cardsEl.scrollTo({ top: feedOffset ? 0 : at * cardsEl.clientHeight, behavior: 'instant' });
   });
 }
 
@@ -387,10 +388,47 @@ function renderFeedXp() {
 
 function renderCards(mod) {
   cardsEl.innerHTML = '';
+  feedOffset = 0;
+  // ripasso lampo: solo nella navigazione normale (non ripasso errori/esame/flash/drill)
+  if (!reviewMode && !examMode && !flashMode && !quizDrillMode) {
+    const recap = buildRecap(mod);
+    if (recap) { cardsEl.appendChild(recap); feedOffset = 1; }
+  }
   mod.cards.forEach((c, i) => cardsEl.appendChild(buildCard(mod, c, i)));
   cardsEl.appendChild(examMode ? buildExamFinale() : buildFinale(mod));
   cardsEl.onscroll = onFeedScroll;
   updateFeedProgress(0);
+}
+
+// ── Ripasso lampo ⚡ ──────────────────────────────────────────────────────────
+// Card dinamica (non salvata in mod.cards) mostrata appena riapri un modulo
+// già iniziato: rinfresca i concetti già visti in base all'avanzamento.
+function buildRecap(mod) {
+  const prog = state.modules[mod.id];
+  if (!prog || prog.done || !prog.card) return null;       // mai iniziato o già finito → niente recap
+  const resumeIdx = Math.min(prog.card, mod.cards.length - 1);
+  const seen = mod.cards.slice(0, resumeIdx + 1).filter(c => c.type === 'lesson' || c.type === 'fact');
+  if (seen.length < 2) return null;                         // troppo poco per un "ripasso"
+  const pct = Math.round(resumeIdx / mod.cards.length * 100);
+  const show = seen.slice(-6);                              // ultimi ~6 concetti, per restare "lampo"
+  const more = seen.length - show.length;
+
+  const el = document.createElement('div');
+  el.className = 'card recap';
+  el.innerHTML = `
+    <div class="card-kicker">📍 ${mod.icon} ${mod.title} · ripasso lampo</div>
+    <div class="card-emoji">⚡</div>
+    <div class="card-title">Dove eri rimasto</div>
+    <div class="card-text">Eri al <strong>${pct}%</strong> del modulo. Rinfresca al volo ciò che hai già visto, poi riprendi 👇</div>
+    <div class="recap-list">
+      ${show.map(c => `<div class="recap-item"><span class="recap-ico">${c.emoji || '•'}</span><span>${c.title}</span></div>`).join('')}
+      ${more > 0 ? `<div class="recap-more">…e altri ${more} concetti prima</div>` : ''}
+    </div>
+    <button class="btn-big recap-btn">Riprendi da dove eri ⬇️</button>`;
+  el.querySelector('.recap-btn').onclick = () => {
+    cardsEl.scrollTo({ top: (resumeIdx + feedOffset) * cardsEl.clientHeight, behavior: 'smooth' });
+  };
+  return el;
 }
 
 function cardIndex() {
@@ -403,12 +441,13 @@ function onFeedScroll() {
   scrollT = setTimeout(() => {
     const i = cardIndex();
     updateFeedProgress(i);
-    if (!reviewMode && !examMode && !flashMode && !quizDrillMode) {
+    const realIdx = i - feedOffset;   // scarta la card sintetica di ripasso lampo
+    if (!reviewMode && !examMode && !flashMode && !quizDrillMode && realIdx >= 0) {
       const prog = state.modules[curMod.id];
-      if (i > (prog.card || 0) && !prog.done) { prog.card = i; saveState(); }
+      if (realIdx > (prog.card || 0) && !prog.done) { prog.card = realIdx; saveState(); }
       // XP lettura per card non-quiz mai viste
-      const c = curMod.cards[i];
-      const key = curMod.id + ':' + i;
+      const c = curMod.cards[realIdx];
+      const key = curMod.id + ':' + realIdx;
       if (c && c.type !== 'quiz' && c.type !== 'input' && c.type !== 'mission' && !state.seen[key]) {
         state.seen[key] = true;
         gainXp(XP_LESSON, '📖');
@@ -419,7 +458,7 @@ function onFeedScroll() {
 }
 
 function updateFeedProgress(i) {
-  const tot = curMod.cards.length + 1;
+  const tot = curMod.cards.length + 1 + feedOffset;
   $('feedProgressFill').style.width = Math.min(100, (i / (tot - 1)) * 100) + '%';
 }
 
@@ -929,7 +968,7 @@ function openModuleAt(modId, cardIdx) {
   renderCards(mod);
   renderFeedXp();
   requestAnimationFrame(() => {
-    cardsEl.scrollTo({ top: cardIdx * cardsEl.clientHeight, behavior: 'instant' });
+    cardsEl.scrollTo({ top: (cardIdx + feedOffset) * cardsEl.clientHeight, behavior: 'instant' });
   });
 }
 
