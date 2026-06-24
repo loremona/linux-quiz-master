@@ -556,3 +556,28 @@ body.light-theme .stats-mod-bar { background: #d8daf0; }
 @media (min-width: 700px) {
   #cheatsheet-overlay .cs-body { max-width: 560px; margin: 0 auto; width: 100%; }
 }
+
+/* ── Profilo ── */
+#profile-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(11,14,26,.92); backdrop-filter: blur(8px);
+  display: flex; flex-direction: column;
+  padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0);
+}
+#profile-overlay.hidden { display: none !important; }
+body.light-theme #profile-overlay { background: rgba(244,246,255,.95); }
+.profile-body { max-width: 480px; margin: 0 auto; width: 100%; padding: 16px; box-sizing: border-box; }
+.profile-hint { color: var(--muted); line-height: 1.5; margin: 8px 0 18px; }
+.profile-input {
+  display: block; width: 100%; box-sizing: border-box; margin-bottom: 12px;
+  padding: 14px 16px; font-size: 16px; border-radius: 14px;
+  border: 1px solid var(--card); background: var(--card); color: var(--text);
+}
+.profile-input::placeholder { color: var(--muted); }
+.profile-btn {
+  width: 100%; padding: 14px; font-size: 16px; font-weight: 800;
+  border: none; border-radius: 14px; cursor: pointer;
+  background: var(--accent); color: #fff;
+}
+.profile-btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--card); margin-top: 10px; }
+.profile-error { color: var(--danger); min-height: 20px; margin-top: 10px; font-size: 14px; }
