@@ -86,11 +86,20 @@
     }, DEBOUNCE_MS);
   }
 
+  // Salvataggio immediato e atteso (per i casi in cui la pagina sta per ricaricarsi
+  // e non si può attendere il debounce di push).
+  async function saveNow(state) {
+    const p = activeProfile();
+    if (!p || !_client) return;
+    clearTimeout(_timer);
+    return _upsert(p.id, p.name, state, new Date().toISOString());
+  }
+
   const Sync = {
     normalizeId, validateCredentials, pickNewest,
     init(client) { _client = client; },
     get _client() { return _client; },
-    activeProfile, logout, login, pull, push,
+    activeProfile, logout, login, pull, push, saveNow,
   };
 
   global.Sync = Sync;
