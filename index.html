@@ -21,6 +21,7 @@
     <div class="header-actions">
       <button class="btn-header-icon" id="btnTheme" onclick="toggleTheme()" title="Tema chiaro/scuro">🌙</button>
       <button class="btn-header-icon" onclick="openStats()" title="Statistiche">📊</button>
+      <button class="btn-header-icon" id="btnProfile" onclick="openProfile()" title="Profilo">👤 Accedi</button>
       <div class="streak-pill" id="streakPill">🔥 0</div>
     </div>
   </header>
@@ -82,6 +83,27 @@
     <button class="cs-close" onclick="closeCheatsheet()">✕</button>
   </div>
   <div class="cs-body" id="cs-body"></div>
+</div>
+
+<!-- ════════ Profilo modale ════════ -->
+<div id="profile-overlay" class="hidden">
+  <div class="cs-header">
+    <div class="cs-title">👤 Il tuo profilo</div>
+    <button class="cs-close" onclick="closeProfile()">✕</button>
+  </div>
+  <div class="profile-body">
+    <p class="profile-hint">Accedi con un <strong>nome</strong> e un <strong>codice</strong> per ritrovare i tuoi progressi su qualsiasi dispositivo.</p>
+    <div id="profile-form">
+      <input id="profile-name" class="profile-input" type="text" placeholder="nome (es. lorenzo)" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <input id="profile-code" class="profile-input" type="text" placeholder="codice (es. 4821)" autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button class="profile-btn" onclick="submitProfile()">Entra / Crea</button>
+      <div id="profile-error" class="profile-error"></div>
+    </div>
+    <div id="profile-logged" class="hidden">
+      <p>Sei dentro come <strong id="profile-current"></strong>. I progressi si salvano in cloud. ✅</p>
+      <button class="profile-btn profile-btn-ghost" onclick="logoutProfilo()">Esci</button>
+    </div>
+  </div>
 </div>
 
 <script src="js/data/module01.js"></script>
