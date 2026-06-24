@@ -122,6 +122,42 @@ test('logout azzera il profilo attivo', async () => {
   eq(activeProfile(), null);
 });
 
+test('pickNewest a parità di timestamp sceglie il locale', () => {
+  const ts = '2026-02-01T00:00:00Z';
+  eq(pickNewest({ state: { xp: 1 }, updatedAt: ts }, { state: { xp: 2 }, updatedAt: ts }).source, 'local');
+});
+test('push senza profilo attivo non scrive nulla', () => {
+  localStorage._reset();
+  const rows = {};
+  init(fakeClient(rows));
+  Sync.push({ xp: 1 });            // nessun profilo attivo → no-op
+  deepEq(rows, {});
+});
+test('saveNow scrive subito lo stato del profilo attivo', async () => {
+  localStorage._reset();
+  const rows = {};
+  init(fakeClient(rows));
+  await login('lori', '4821', { xp: 1 });
+  await Sync.saveNow({ xp: 50 });
+  eq(rows['lori:4821'].state.xp, 50);
+});
+test('login offline (upsert fallisce) registra comunque il profilo locale', async () => {
+  localStorage._reset();
+  init({
+    from() {
+      return {
+        select() { return this; },
+        eq() { return this; },
+        async maybeSingle() { return { data: null, error: null }; },
+        async upsert() { throw new Error('offline'); },
+      };
+    },
+  });
+  const res = await login('nuovo', 'abcd', { xp: 3 });
+  eq(res.ok, true); eq(res.exists, false);
+  deepEq(activeProfile(), { id: 'nuovo:abcd', name: 'nuovo' });
+});
+
 // ── Runner (await sequenziale, Promise via MainLoop) ──────────────
 const loop = GLib.MainLoop.new(null, false);
 (async () => {
