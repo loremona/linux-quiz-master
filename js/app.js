@@ -24,8 +24,14 @@ function loadState() {
   return defaultState();
 }
 
+const UPDATED_KEY = 'linux-dojo-updated';
+
 function saveState() {
-  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    localStorage.setItem(UPDATED_KEY, new Date().toISOString());
+  } catch (e) {}
+  if (typeof Sync !== 'undefined') Sync.push(state);
 }
 
 // ── Streak giornaliero ───────────────────────────────────────────────────────
@@ -1028,8 +1034,85 @@ function setupSearch() {
   });
 }
 
+// ── Sync cloud (profilo) ──────────────────────────────────────────────────────
+function showProfileError(msg) {
+  const el = $('profile-error'); if (el) el.textContent = msg || '';
+}
+function renderProfileButton() {
+  const btn = $('btnProfile'); if (!btn) return;
+  const p = (typeof Sync !== 'undefined') ? Sync.activeProfile() : null;
+  btn.textContent = p ? `👤 ${p.name}` : '👤 Accedi';
+}
+function openProfile() {
+  const p = (typeof Sync !== 'undefined') ? Sync.activeProfile() : null;
+  $('profile-logged').classList.toggle('hidden', !p);
+  $('profile-form').classList.toggle('hidden', !!p);
+  if (p) $('profile-current').textContent = p.name;
+  showProfileError('');
+  $('profile-overlay').classList.remove('hidden');
+}
+function closeProfile() { $('profile-overlay').classList.add('hidden'); }
+function submitProfile() {
+  loginProfilo($('profile-name').value, $('profile-code').value);
+}
+
+async function syncOnStartup() {
+  if (typeof Sync === 'undefined' || !Sync._client || !Sync.activeProfile()) return;
+  // Guardia: una sola adozione-con-reload per sessione, così un pull non può
+  // mai ri-innescare un reload (no loop, indipendentemente dai timestamp).
+  if (sessionStorage.getItem('lds-adopted')) return;
+  const remote = await Sync.pull();
+  if (!remote) return;
+  const local = { state, updatedAt: localStorage.getItem(UPDATED_KEY) };
+  const chosen = Sync.pickNewest(local, remote);
+  if (chosen.source === 'remote') {
+    sessionStorage.setItem('lds-adopted', '1');
+    localStorage.setItem(STORE_KEY, JSON.stringify(remote.state));
+    localStorage.setItem(UPDATED_KEY, remote.updatedAt);
+    location.reload();
+  } else {
+    Sync.push(state);
+  }
+}
+
+async function loginProfilo(name, code) {
+  if (typeof Sync === 'undefined' || !Sync._client) {
+    showProfileError('Cloud non configurato (manca js/config.js).');
+    return;
+  }
+  const res = await Sync.login(name, code, state);
+  if (!res.ok) { showProfileError(res.error); return; }
+  if (res.exists && res.remote) {
+    const local = { state, updatedAt: localStorage.getItem(UPDATED_KEY) };
+    const chosen = Sync.pickNewest(local, res.remote);
+    if (chosen.source === 'remote') {
+      localStorage.setItem(STORE_KEY, JSON.stringify(res.remote.state));
+      localStorage.setItem(UPDATED_KEY, res.remote.updatedAt);
+    } else {
+      // Lo stato locale è più recente: va spinto SUBITO, perché il reload
+      // qui sotto ucciderebbe il debounce di Sync.push prima che scatti.
+      try { await Sync.saveNow(state); } catch (e) { /* offline: resterà in locale */ }
+    }
+  }
+  location.reload();
+}
+
+function logoutProfilo() {
+  if (typeof Sync !== 'undefined') Sync.logout();
+  location.reload();
+}
+
 // ── Avvio ────────────────────────────────────────────────────────────────────
 $('btnExit').onclick = exitFeed;
 initTheme();
 setupSearch();
 renderHome();
+renderProfileButton();
+
+// Sync cloud: attiva solo se config valorizzata
+if (typeof Sync !== 'undefined' && typeof SUPABASE_URL !== 'undefined'
+    && window.supabase && /^https?:\/\//.test(SUPABASE_URL)
+    && !SUPABASE_URL.includes('INSERISCI')) {
+  Sync.init(window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY));
+}
+syncOnStartup();
