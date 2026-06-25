@@ -19,7 +19,7 @@ Modulo denso: molti comandi con opzioni simili, molte trappole d'esame.`,
   { type: 'lesson', emoji: '📋', title: '/etc/passwd: la rubrica degli utenti',
     text: `Ogni riga di <code>/etc/passwd</code> descrive un utente con 7 campi separati da <code>:</code>:<br>
 <br>
-<code>lore:x:1000:1000:Lorenzo Monaco:/home/lore:/bin/bash</code><br>
+<code>mario:x:1000:1000:Mario Rossi:/home/mario:/bin/bash</code><br>
 <br>
 1. <strong>username</strong><br>
 2. <strong>password</strong> — sempre <code>x</code>: la vera password è in /etc/shadow<br>
@@ -34,8 +34,8 @@ TRAPPOLA! La password non è in /etc/passwd — c'è solo una <code>x</code> seg
 
   // ── 3. Terminal: /etc/passwd ──────────────────────────────────────────────────
   { type: 'terminal', emoji: '📋', title: 'Leggi /etc/passwd',
-    cmd: 'getent passwd lore && echo "---" && grep -c ":" /etc/passwd',
-    out: `lore:x:1000:1000:Lorenzo Monaco:/home/lore:/bin/bash
+    cmd: 'getent passwd mario && echo "---" && grep -c ":" /etc/passwd',
+    out: `mario:x:1000:1000:Mario Rossi:/home/mario:/bin/bash
 ---
 42` },
 
