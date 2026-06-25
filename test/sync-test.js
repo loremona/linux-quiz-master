@@ -57,16 +57,16 @@ function fakeClient(rows) {
 
 // ── Helper puri ───────────────────────────────────────────────────
 test('normalizeId combina nome e codice in minuscolo, con trim', () => {
-  eq(normalizeId('  Lorenzo ', 'AB12'), 'lorenzo:ab12');
+  eq(normalizeId('  Tux ', 'AB12'), 'tux:ab12');
 });
 test('validateCredentials rifiuta nome troppo corto', () => {
   eq(validateCredentials('a', 'abc').ok, false);
 });
 test('validateCredentials rifiuta codice troppo corto', () => {
-  eq(validateCredentials('lori', 'ab').ok, false);
+  eq(validateCredentials('tux', 'ab').ok, false);
 });
 test('validateCredentials accetta input validi e normalizza', () => {
-  deepEq(validateCredentials(' Lori ', ' 4821 '), { ok: true, name: 'lori', code: '4821' });
+  deepEq(validateCredentials(' Tux ', ' 1234 '), { ok: true, name: 'tux', code: '1234' });
 });
 test('pickNewest sceglie il remoto se piu recente', () => {
   const local = { state: { xp: 1 }, updatedAt: '2026-01-01T00:00:00Z' };
@@ -87,11 +87,11 @@ test('pickNewest sceglie il locale se piu recente del remoto', () => {
 // ── Operazioni cloud ──────────────────────────────────────────────
 test('login con profilo esistente ritorna lo stato remoto e lo segna attivo', async () => {
   localStorage._reset();
-  const rows = { 'lori:4821': { state: { xp: 99 }, updated_at: '2026-03-01T00:00:00Z' } };
+  const rows = { 'tux:1234': { state: { xp: 99 }, updated_at: '2026-03-01T00:00:00Z' } };
   init(fakeClient(rows));
-  const res = await login('Lori', '4821', { xp: 0 });
+  const res = await login('Tux', '1234', { xp: 0 });
   eq(res.ok, true); eq(res.exists, true); eq(res.remote.state.xp, 99);
-  deepEq(activeProfile(), { id: 'lori:4821', name: 'lori' });
+  deepEq(activeProfile(), { id: 'tux:1234', name: 'tux' });
 });
 test('login con profilo nuovo crea la riga dallo stato locale', async () => {
   localStorage._reset();
@@ -108,16 +108,16 @@ test('login rifiuta credenziali non valide', async () => {
 });
 test('pull ritorna lo stato remoto del profilo attivo', async () => {
   localStorage._reset();
-  const rows = { 'lori:4821': { state: { xp: 42 }, updated_at: '2026-03-01T00:00:00Z' } };
+  const rows = { 'tux:1234': { state: { xp: 42 }, updated_at: '2026-03-01T00:00:00Z' } };
   init(fakeClient(rows));
-  await login('lori', '4821', { xp: 0 });
+  await login('tux', '1234', { xp: 0 });
   const remote = await pull();
   eq(remote.state.xp, 42);
 });
 test('logout azzera il profilo attivo', async () => {
   localStorage._reset();
   init(fakeClient({}));
-  await login('lori', '4821', { xp: 0 });
+  await login('tux', '1234', { xp: 0 });
   logout();
   eq(activeProfile(), null);
 });
@@ -137,9 +137,9 @@ test('saveNow scrive subito lo stato del profilo attivo', async () => {
   localStorage._reset();
   const rows = {};
   init(fakeClient(rows));
-  await login('lori', '4821', { xp: 1 });
+  await login('tux', '1234', { xp: 1 });
   await Sync.saveNow({ xp: 50 });
-  eq(rows['lori:4821'].state.xp, 50);
+  eq(rows['tux:1234'].state.xp, 50);
 });
 test('login offline (upsert fallisce) registra comunque il profilo locale', async () => {
   localStorage._reset();

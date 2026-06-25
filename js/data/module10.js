@@ -548,11 +548,11 @@ Firma e verifica:<br>
   // ── 27. Terminal: gpg ─────────────────────────────────────────────────────────
   { type: 'terminal', emoji: '🔒', title: 'GPG: genera e gestisci chiavi',
     cmd: 'gpg --list-keys',
-    out: `/home/lore/.gnupg/pubring.kbx
+    out: `/home/mario/.gnupg/pubring.kbx
 -------------------------------
 pub   ed25519 2026-01-15 [SC]
       A1B2C3D4E5F6A1B2C3D4E5F6A1B2C3D4E5F6A1B2
-uid           [ultimate] Lorenzo Monaco <lore@example.com>
+uid           [ultimate] Mario Rossi <mario@example.com>
 sub   cv25519 2026-01-15 [E]` },
 
   // ── 28. Quiz: gpg firma vs cifratura ─────────────────────────────────────────
