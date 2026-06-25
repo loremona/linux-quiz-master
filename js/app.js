@@ -1058,21 +1058,22 @@ function submitProfile() {
 
 async function syncOnStartup() {
   if (typeof Sync === 'undefined' || !Sync._client || !Sync.activeProfile()) return;
-  // Guardia: una sola adozione-con-reload per sessione, così un pull non può
-  // mai ri-innescare un reload (no loop, indipendentemente dai timestamp).
+  // Guardia: un solo merge-con-reload per sessione (no loop).
   if (sessionStorage.getItem('lds-adopted')) return;
   const remote = await Sync.pull();
-  if (!remote) return;
-  const local = { state, updatedAt: localStorage.getItem(UPDATED_KEY) };
-  const chosen = Sync.pickNewest(local, remote);
-  if (chosen.source === 'remote') {
-    sessionStorage.setItem('lds-adopted', '1');
-    localStorage.setItem(STORE_KEY, JSON.stringify(remote.state));
-    localStorage.setItem(UPDATED_KEY, remote.updatedAt);
-    location.reload();
-  } else {
-    Sync.push(state);
+  if (!remote) { Sync.push(state); return; }   // niente in cloud: spingi il locale
+  // Unione non distruttiva: non si perde mai progresso (né locale né remoto).
+  const merged = Sync.mergeStates(state, remote.state);
+  if (JSON.stringify(merged) === JSON.stringify(state)) {
+    Sync.push(state);   // locale già completo: allinea il cloud se serve
+    return;
   }
+  sessionStorage.setItem('lds-adopted', '1');
+  state = { ...defaultState(), ...merged };
+  localStorage.setItem(STORE_KEY, JSON.stringify(state));
+  localStorage.setItem(UPDATED_KEY, new Date().toISOString());
+  try { await Sync.saveNow(state); } catch (e) { /* offline: resta in locale */ }
+  location.reload();
 }
 
 async function loginProfilo(name, code) {
@@ -1083,16 +1084,13 @@ async function loginProfilo(name, code) {
   const res = await Sync.login(name, code, state);
   if (!res.ok) { showProfileError(res.error); return; }
   if (res.exists && res.remote) {
-    const local = { state, updatedAt: localStorage.getItem(UPDATED_KEY) };
-    const chosen = Sync.pickNewest(local, res.remote);
-    if (chosen.source === 'remote') {
-      localStorage.setItem(STORE_KEY, JSON.stringify(res.remote.state));
-      localStorage.setItem(UPDATED_KEY, res.remote.updatedAt);
-    } else {
-      // Lo stato locale è più recente: va spinto SUBITO, perché il reload
-      // qui sotto ucciderebbe il debounce di Sync.push prima che scatti.
-      try { await Sync.saveNow(state); } catch (e) { /* offline: resterà in locale */ }
-    }
+    // Unisci progresso locale e remoto: non si perde nulla di nessuno dei due.
+    const merged = Sync.mergeStates(state, res.remote.state);
+    state = { ...defaultState(), ...merged };
+    localStorage.setItem(STORE_KEY, JSON.stringify(state));
+    localStorage.setItem(UPDATED_KEY, new Date().toISOString());
+    // Spingi SUBITO il merge: il reload qui sotto ucciderebbe il debounce di push.
+    try { await Sync.saveNow(state); } catch (e) { /* offline: resterà in locale */ }
   }
   location.reload();
 }
