@@ -25,6 +25,37 @@
       : { state: local ? local.state : null, updatedAt: local ? local.updatedAt : null, source: 'local' };
   }
 
+  function mergeModules(a, b) {
+    a = a || {}; b = b || {};
+    const out = {};
+    for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      const x = a[k] || {}, y = b[k] || {};
+      out[k] = {
+        card: Math.max(x.card || 0, y.card || 0),
+        done: !!(x.done || y.done),
+        quizOk: Math.max(x.quizOk || 0, y.quizOk || 0),
+        quizTot: Math.max(x.quizTot || 0, y.quizTot || 0),
+      };
+    }
+    return out;
+  }
+
+  // Unione NON distruttiva di due stati. Il progresso è monotòno (XP e card viste
+  // possono solo aumentare): unendo non si perde mai nulla. Sostituisce il
+  // "last-write-wins" che poteva azzerare i progressi.
+  function mergeStates(a, b) {
+    a = a || {}; b = b || {};
+    return {
+      xp: Math.max(a.xp || 0, b.xp || 0),
+      streak: Math.max(a.streak || 0, b.streak || 0),
+      bestStreak: Math.max(a.bestStreak || 0, b.bestStreak || 0),
+      lastDay: (a.lastDay || '') >= (b.lastDay || '') ? (a.lastDay || null) : (b.lastDay || null),
+      seen: { ...(b.seen || {}), ...(a.seen || {}) },
+      wrong: { ...(b.wrong || {}), ...(a.wrong || {}) },
+      modules: mergeModules(a.modules, b.modules),
+    };
+  }
+
   // ── Operazioni cloud ──────────────────────────────────────────────
   const PROFILE_KEY = 'linux-dojo-profile';
   const TABLE = 'profiles';
@@ -96,7 +127,7 @@
   }
 
   const Sync = {
-    normalizeId, validateCredentials, pickNewest,
+    normalizeId, validateCredentials, pickNewest, mergeStates, mergeModules,
     init(client) { _client = client; },
     get _client() { return _client; },
     activeProfile, logout, login, pull, push, saveNow,
@@ -104,7 +135,7 @@
 
   global.Sync = Sync;
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { normalizeId, validateCredentials, pickNewest, Sync };
+    module.exports = { normalizeId, validateCredentials, pickNewest, mergeStates, mergeModules, Sync };
   }
 
 })(typeof window !== 'undefined' ? window : globalThis);

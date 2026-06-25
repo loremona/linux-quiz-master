@@ -21,7 +21,7 @@ globalThis.localStorage = (() => {
 const [, bytes] = GLib.file_get_contents('js/sync.js');
 const src = new TextDecoder().decode(bytes);
 (0, eval)(src);
-const { normalizeId, validateCredentials, pickNewest, init, activeProfile, logout, login, pull } = Sync;
+const { normalizeId, validateCredentials, pickNewest, mergeStates, init, activeProfile, logout, login, pull } = Sync;
 
 // ── Mini framework di assert ──────────────────────────────────────
 let failures = 0;
@@ -156,6 +156,25 @@ test('login offline (upsert fallisce) registra comunque il profilo locale', asyn
   const res = await login('nuovo', 'abcd', { xp: 3 });
   eq(res.ok, true); eq(res.exists, false);
   deepEq(activeProfile(), { id: 'nuovo:abcd', name: 'nuovo' });
+});
+
+test('mergeStates unisce senza perdere progresso (max xp, unione seen)', () => {
+  const a = { xp: 40, seen: { 'm01:1': true }, wrong: {}, streak: 2, bestStreak: 3, lastDay: '2026-06-24', modules: {} };
+  const b = { xp: 65, seen: { 'm01:2': true }, wrong: {}, streak: 1, bestStreak: 5, lastDay: '2026-06-25', modules: {} };
+  const m = mergeStates(a, b);
+  eq(m.xp, 65);
+  eq(m.bestStreak, 5);
+  eq(m.lastDay, '2026-06-25');
+  ok(m.seen['m01:1'] && m.seen['m01:2']);
+});
+test('mergeStates con stato vuoto NON azzera l altro (anti data-loss)', () => {
+  const real = { xp: 50, seen: { 'm01:1': true }, wrong: {}, streak: 1, bestStreak: 1, lastDay: '2026-06-25', modules: { m01: { card: 3, done: false, quizOk: 2, quizTot: 4 } } };
+  const empty = { xp: 0, seen: {}, wrong: {}, streak: 0, bestStreak: 0, lastDay: null, modules: {} };
+  const m = mergeStates(empty, real);
+  eq(m.xp, 50);
+  ok(m.seen['m01:1']);
+  eq(m.modules.m01.card, 3);
+  eq(m.modules.m01.quizOk, 2);
 });
 
 // ── Runner (await sequenziale, Promise via MainLoop) ──────────────
