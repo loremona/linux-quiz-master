@@ -118,11 +118,11 @@
 <script src="js/data/module10.js"></script>
 <script src="js/cheatsheets.js"></script>
 <script src="js/modules.js"></script>
-<!-- Supabase (sync profilo). SICUREZZA: prima di usarlo online, pinna una versione esatta
-     e aggiungi integrity="sha384-…". Genera l'hash con:
-       curl -s https://cdn.jsdelivr.net/npm/@supabase/supabase-js@<VERSIONE>/dist/umd/supabase.min.js | openssl dgst -sha384 -binary | openssl base64 -A
-     poi sostituisci @2 con @<VERSIONE> e aggiungi l'attributo integrity. -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+<!-- Supabase (sync profilo). Versione pinnata + SRI: se cambi versione, rigenera l'hash con:
+       curl -s https://cdn.jsdelivr.net/npm/@supabase/supabase-js@<VERSIONE>/dist/umd/supabase.min.js | openssl dgst -sha384 -binary | openssl base64 -A -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js"
+        integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm"
+        crossorigin="anonymous"></script>
 <script src="js/config.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/app.js"></script>
