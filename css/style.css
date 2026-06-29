@@ -617,3 +617,7 @@ body.light-theme #profile-overlay { background: rgba(244,246,255,.95); }
 .rc-ico { font-size: 1.15rem; flex-shrink: 0; }
 .rc-title { font-weight: 700; font-size: .92rem; display: block; }
 .rc-essence { font-size: .82rem; color: var(--muted); display: block; margin-top: 2px; }
+.card.recall-card { justify-content: center; }
+.recall-essence { margin-top: 16px; font-size: 1.05rem; line-height: 1.6; color: #d6d9f5; animation: slideUp .25s ease; }
+.recall-actions { display: flex; gap: 10px; margin-top: 20px; }
+.recall-card.recall-done { opacity: .4; }
