@@ -56,9 +56,27 @@
     <button class="btn-icon" id="btnExit">✕</button>
     <div class="feed-progress"><div class="feed-progress-fill" id="feedProgressFill"></div></div>
     <div class="feed-xp" id="feedXp">⚡ 0</div>
+    <button class="btn-icon" id="btnNotesHub" aria-label="Le tue note">📝</button>
   </div>
   <div id="cards" class="cards"></div>
+  <button class="note-pin" id="notePin" aria-label="Nota su questa card">📝</button>
   <div class="swipe-hint" id="swipeHint">scorri in su per continuare ⬆️</div>
+</div>
+
+<div id="note-sheet" class="note-sheet hidden">
+  <div class="note-sheet-inner">
+    <div class="note-sheet-title" id="noteSheetTitle"></div>
+    <textarea id="noteSheetText" class="note-sheet-text" placeholder="Scrivi con parole tue: cosa hai capito, un dubbio, un collegamento…"></textarea>
+    <div class="note-sheet-actions">
+      <button class="btn-solution" id="noteSheetCancel">Chiudi</button>
+      <button class="btn-done" id="noteSheetSave" style="flex:1">Salva</button>
+    </div>
+  </div>
+</div>
+
+<div id="notes-hub" class="hidden">
+  <div class="cs-header"><div class="cs-title">📝 Le tue note</div><button class="btn-icon" id="btnNotesHubClose">✕</button></div>
+  <div id="notesHubList" class="notes-hub-list"></div>
 </div>
 
 <!-- ════════ Coriandoli ════════ -->
@@ -125,6 +143,7 @@
         crossorigin="anonymous"></script>
 <script src="js/config.js"></script>
 <script src="js/sync.js"></script>
+<script src="js/notes-core.js"></script>
 <script src="js/app.js"></script>
 <script>
   if ('serviceWorker' in navigator) {

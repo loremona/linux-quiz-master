@@ -490,6 +490,19 @@ body.light-theme .stats-mod-bar { background: #d8daf0; }
   scrollbar-width: thin; scrollbar-color: #2a3160 transparent;
 }
 
+.note-pin {
+  position: fixed; right: 16px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  width: 50px; height: 50px; border-radius: 50%;
+  background: rgba(255,255,255,.08); border: 1px solid #3a4070;
+  color: var(--text); font-size: 1.35rem; cursor: pointer; z-index: 16;
+  display: none; align-items: center; justify-content: center;
+  transition: transform .12s, background .15s;
+}
+.note-pin.visible { display: flex; }
+.note-pin:active { transform: scale(.9); }
+.note-pin.has-note { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(124,92,255,.18); }
+
 @media (min-width: 700px) {
   #home, .card { max-width: 520px; margin-left: auto; margin-right: auto; }
   .feed-topbar { max-width: 520px; left: 50%; transform: translateX(-50%); }
@@ -507,6 +520,8 @@ body.light-theme .stats-mod-bar { background: #d8daf0; }
   transition: background .15s;
 }
 .btn-cheatsheet:hover { background: rgba(124,92,255,.3); }
+.btn-review { border-color: var(--gold) !important; color: var(--gold) !important; background: rgba(255,200,61,.12); }
+.btn-review:hover { background: rgba(255,200,61,.24); }
 
 /* ═══════════ Cheatsheet modale ═══════════ */
 #cheatsheet-overlay {
@@ -581,3 +596,30 @@ body.light-theme #profile-overlay { background: rgba(244,246,255,.95); }
 }
 .profile-btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--card); margin-top: 10px; }
 .profile-error { color: var(--danger); min-height: 20px; margin-top: 10px; font-size: 14px; }
+
+/* ── Note sheet + hub ───────────────────────────────────────────────────────── */
+.note-sheet { position: fixed; inset: 0; z-index: 60; background: rgba(0,0,0,.55); display: flex; align-items: flex-end; }
+.note-sheet.hidden { display: none; }
+.note-sheet-inner { width: 100%; background: var(--card); border-radius: 20px 20px 0 0; padding: 20px 18px calc(20px + env(safe-area-inset-bottom)); animation: slideUp .25s ease; }
+.note-sheet-title { font-weight: 800; font-size: .95rem; margin-bottom: 12px; color: var(--accent2); }
+.note-sheet-text { width: 100%; min-height: 130px; resize: vertical; background: #0a0d18; border: 1px solid #2a3158; border-radius: 12px; color: var(--text); font: inherit; padding: 12px; }
+.note-sheet-actions { display: flex; gap: 10px; margin-top: 14px; }
+#notes-hub { position: fixed; inset: 0; z-index: 200; background: var(--bg); overflow-y: auto; padding: env(safe-area-inset-top) 16px env(safe-area-inset-bottom); }
+.notes-hub-list { display: flex; flex-direction: column; gap: 10px; padding-bottom: 24px; }
+.notes-hub-mod { font-size: .72rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); margin: 14px 2px 4px; }
+.notes-hub-item { background: var(--card); border: 1px solid #232a55; border-radius: 12px; padding: 12px 14px; cursor: pointer; }
+.notes-hub-item .nh-card { font-weight: 700; font-size: .9rem; margin-bottom: 4px; }
+.notes-hub-item .nh-text { font-size: .88rem; color: #c9cdf0; white-space: pre-wrap; }
+.notes-hub-empty { color: var(--muted); text-align: center; margin-top: 40px; }
+.card.recap-check { justify-content: flex-start; }
+.rc-list { display: flex; flex-direction: column; gap: 8px; margin: 16px 0; }
+.rc-item { display: flex; align-items: flex-start; gap: 10px; background: #11152b; border: 1px solid #232a55; border-radius: 12px; padding: 11px 12px; cursor: pointer; }
+.rc-item.checked { opacity: .55; border-color: var(--accent2); }
+.rc-item input { margin-top: 3px; width: 18px; height: 18px; flex-shrink: 0; accent-color: var(--accent2); }
+.rc-ico { font-size: 1.15rem; flex-shrink: 0; }
+.rc-title { font-weight: 700; font-size: .92rem; display: block; }
+.rc-essence { font-size: .82rem; color: var(--muted); display: block; margin-top: 2px; }
+.card.recall-card { justify-content: center; }
+.recall-essence { margin-top: 16px; font-size: 1.05rem; line-height: 1.6; color: #d6d9f5; animation: slideUp .25s ease; }
+.recall-actions { display: flex; gap: 10px; margin-top: 20px; }
+.recall-card.recall-done { opacity: .4; }

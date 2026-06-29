@@ -12,6 +12,8 @@ const defaultState = () => ({
   modules: {},   // id -> { card: ultimaCardVista, done: bool, quizOk: n, quizTot: n }
   seen: {},      // "modId:cardIdx" -> true (XP già assegnata)
   wrong: {},     // "modId:cardIdx" -> true (quiz sbagliati al primo tentativo)
+  notes: {},     // "modId:cardIdx" -> { text, title, ts }
+  recall: {},    // "modId:cardIdx" -> { val, ts }  (concetto "lo ricordo")
 });
 
 let state = loadState();
@@ -257,6 +259,7 @@ function renderHome() {
     const hasCS = typeof CHEATSHEETS !== 'undefined' && !!CHEATSHEETS[mod.id];
     const flashCount = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact').length;
     const drillCount = mod.cards.filter(c => c.type === 'quiz' || c.type === 'input').length;
+    const toReview = prog.done ? NotesCore.reviewCount(mod, state.recall) : 0;
     el.innerHTML = `
       <div class="module-icon">${mod.icon}</div>
       <div class="module-meta">
@@ -269,6 +272,7 @@ function renderHome() {
         ${!locked && flashCount > 0 ? `<button class="btn-cheatsheet" data-action="flash">📖 flash</button>` : ''}
         ${!locked && drillCount > 0 ? `<button class="btn-cheatsheet" data-action="drill">🎯 quiz</button>` : ''}
         ${hasCS && !locked ? `<button class="btn-cheatsheet" data-action="cheat">📄 cheat</button>` : ''}
+        ${toReview > 0 ? `<button class="btn-cheatsheet btn-review" data-action="recall">📌 ${toReview} ripasso</button>` : ''}
       </div>`;
     if (!locked) {
       el.onclick = () => openModule(mod);
@@ -279,6 +283,7 @@ function renderHome() {
           if (action === 'flash') openFlash(mod);
           else if (action === 'drill') openQuizDrill(mod);
           else if (action === 'cheat') openCheatsheet(mod);
+          else if (action === 'recall') openRecallReview(mod);
         });
       });
     }
@@ -297,13 +302,14 @@ let examTimerSec = 0;
 let examTimerInterval = null;
 let flashMode = false;
 let quizDrillMode = false;
+let recallMode = false;
 let feedOffset = 0;   // n. di card sintetiche prima delle card reali (es. ripasso lampo)
 
 function openModule(mod) {
   $('searchInput').value = '';
   clearSearch();
   curMod = mod;
-  reviewMode = false;
+  reviewMode = false; recallMode = false;
   state.modules[mod.id] = state.modules[mod.id] || { card: 0, done: false, quizOk: 0, quizTot: 0 };
   homeEl.classList.add('hidden');
   feedEl.classList.remove('hidden');
@@ -333,7 +339,7 @@ function openReview() {
   }
   if (!cards.length) return;
 
-  reviewMode = true;
+  reviewMode = true; recallMode = false;
   curMod = { id: 'review', icon: '🔁', title: 'Ripasso errori', cards };
   homeEl.classList.add('hidden');
   feedEl.classList.remove('hidden');
@@ -345,7 +351,7 @@ function openFlash(mod) {
   const flashCards = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact');
   if (!flashCards.length) return;
   curMod = { ...mod, cards: flashCards };
-  reviewMode = false; examMode = false; flashMode = true; quizDrillMode = false;
+  reviewMode = false; examMode = false; flashMode = true; quizDrillMode = false; recallMode = false;
   homeEl.classList.add('hidden');
   feedEl.classList.remove('hidden');
   renderCards(curMod);
@@ -356,12 +362,25 @@ function openQuizDrill(mod) {
   const drillCards = mod.cards.filter(c => c.type === 'quiz' || c.type === 'input');
   if (!drillCards.length) return;
   curMod = { ...mod, cards: drillCards };
-  reviewMode = false; examMode = false; flashMode = false; quizDrillMode = true;
+  reviewMode = false; examMode = false; flashMode = false; quizDrillMode = true; recallMode = false;
   drillCorrect = 0; drillTotal = 0;
   homeEl.classList.add('hidden');
   feedEl.classList.remove('hidden');
   renderCards(curMod);
   renderFeedXp();
+}
+
+function openRecallReview(srcMod) {
+  const items = NotesCore.toReview(srcMod, state.recall);
+  if (!items.length) return;
+  reviewMode = false; examMode = false; flashMode = false; quizDrillMode = false; recallMode = true;
+  curMod = { id: srcMod.id, icon: srcMod.icon, title: srcMod.title,
+             cards: items.map(it => it.card), _idx: items.map(it => it.i) };
+  homeEl.classList.add('hidden');
+  feedEl.classList.remove('hidden');
+  renderCards(curMod);
+  renderFeedXp();
+  requestAnimationFrame(() => cardsEl.scrollTo({ top: 0, behavior: 'instant' }));
 }
 
 function exitFeed() {
@@ -374,6 +393,7 @@ function exitFeed() {
   examTimerSec = 0;
   flashMode = false;
   quizDrillMode = false;
+  recallMode = false;
   feedEl.classList.add('hidden');
   homeEl.classList.remove('hidden');
   renderHome();
@@ -396,14 +416,20 @@ function renderCards(mod) {
   cardsEl.innerHTML = '';
   feedOffset = 0;
   // ripasso lampo: solo nella navigazione normale (non ripasso errori/esame/flash/drill)
-  if (!reviewMode && !examMode && !flashMode && !quizDrillMode) {
+  if (!reviewMode && !examMode && !flashMode && !quizDrillMode && !recallMode) {
     const recap = buildRecap(mod);
     if (recap) { cardsEl.appendChild(recap); feedOffset = 1; }
   }
-  mod.cards.forEach((c, i) => cardsEl.appendChild(buildCard(mod, c, i)));
+  const builder = recallMode ? buildRecallCard : buildCard;
+  mod.cards.forEach((c, i) => cardsEl.appendChild(builder(mod, c, i)));
   cardsEl.appendChild(examMode ? buildExamFinale() : buildFinale(mod));
+  if (!reviewMode && !examMode && !flashMode && !quizDrillMode && !recallMode) {
+    const rc = buildRecapChecklist(mod);
+    if (rc) cardsEl.appendChild(rc);
+  }
   cardsEl.onscroll = onFeedScroll;
   updateFeedProgress(0);
+  refreshPin();
 }
 
 // ── Ripasso lampo ⚡ ──────────────────────────────────────────────────────────
@@ -441,6 +467,79 @@ function cardIndex() {
   return Math.round(cardsEl.scrollTop / cardsEl.clientHeight);
 }
 
+function noteCtx() {
+  if (reviewMode || examMode || flashMode || quizDrillMode || recallMode) return null;
+  if (!curMod) return null;
+  const realIdx = cardIndex() - feedOffset;
+  const card = curMod.cards[realIdx];
+  if (realIdx < 0 || !card) return null;
+  return { modId: curMod.id, i: realIdx, card };
+}
+
+function refreshPin() {
+  const pin = $('notePin');
+  const ctx = noteCtx();
+  if (!ctx) { pin.classList.remove('visible', 'has-note'); return; }
+  pin.classList.add('visible');
+  const note = state.notes[NotesCore.key(ctx.modId, ctx.i)];
+  pin.classList.toggle('has-note', !!(note && note.text));
+}
+
+function openNoteSheet(modId, i, card) {
+  const key = NotesCore.key(modId, i);
+  const existing = state.notes[key];
+  $('noteSheetTitle').textContent = card.title || card.q || 'Nota';
+  $('noteSheetText').value = existing ? existing.text : '';
+  $('note-sheet').classList.remove('hidden');
+  $('noteSheetText').focus();
+  $('noteSheetSave').onclick = () => {
+    saveNote(modId, i, card.title || card.q || '', $('noteSheetText').value.trim());
+    $('note-sheet').classList.add('hidden');
+    refreshPin();
+  };
+}
+
+function saveNote(modId, i, title, text) {
+  state.notes[NotesCore.key(modId, i)] = { text, title, ts: new Date().toISOString() };
+  saveState();
+}
+
+function openNotesHub() {
+  const list = $('notesHubList');
+  list.innerHTML = '';
+  const byMod = {};
+  for (const [key, n] of Object.entries(state.notes)) {
+    if (!n || !n.text) continue;
+    const colon = key.lastIndexOf(':');
+    const modId = key.slice(0, colon), i = parseInt(key.slice(colon + 1), 10);
+    (byMod[modId] = byMod[modId] || []).push({ i, n });
+  }
+  const modIds = Object.keys(byMod);
+  if (!modIds.length) { list.innerHTML = `<div class="notes-hub-empty">Nessuna nota ancora. Tocca 📝 su una card per iniziare.</div>`; }
+  for (const modId of modIds) {
+    const mod = MODULES.find(m => m.id === modId);
+    const head = document.createElement('div');
+    head.className = 'notes-hub-mod';
+    head.textContent = (mod ? mod.icon + ' ' + mod.title : modId);
+    list.appendChild(head);
+    byMod[modId].sort((a, b) => a.i - b.i).forEach(({ i, n }) => {
+      const item = document.createElement('div');
+      item.className = 'notes-hub-item';
+      const cardDiv = document.createElement('div');
+      cardDiv.className = 'nh-card';
+      cardDiv.textContent = n.title || ('Card ' + i);
+      const textDiv = document.createElement('div');
+      textDiv.className = 'nh-text';
+      textDiv.textContent = n.text;
+      item.appendChild(cardDiv);
+      item.appendChild(textDiv);
+      item.onclick = () => { $('notes-hub').classList.add('hidden'); openModuleAt(modId, i); };
+      list.appendChild(item);
+    });
+  }
+  $('notes-hub').classList.remove('hidden');
+}
+
 let scrollT = null;
 function onFeedScroll() {
   clearTimeout(scrollT);
@@ -460,6 +559,7 @@ function onFeedScroll() {
       }
     }
     $('swipeHint').style.display = i === 0 ? '' : 'none';
+    refreshPin();
   }, 120);
 }
 
@@ -735,6 +835,16 @@ function buildFinale(mod) {
   const el = document.createElement('div');
   el.className = 'card finale';
 
+  if (recallMode) {
+    el.innerHTML = `
+      <div class="card-emoji">🎉</div>
+      <div class="card-title">Ripasso completato!</div>
+      <div class="card-text">Hai ripreso in mano i concetti che ti erano sfuggiti. Tornaci quando vuoi.</div>
+      <button class="btn-big" style="margin-top:1.2rem">Torna al Dojo 🐧</button>`;
+    el.querySelector('.btn-big').onclick = exitFeed;
+    return el;
+  }
+
   if (flashMode) {
     el.innerHTML = `
       <div class="card-emoji">📖</div>
@@ -800,6 +910,83 @@ function buildFinale(mod) {
       confetti(220);
     }
   }, { root: cardsEl, threshold: .6 }).observe(el);
+  return el;
+}
+
+function buildRecapChecklist(mod) {
+  const items = NotesCore.concepts(mod);
+  if (items.length < 2) return null;
+  const el = document.createElement('div');
+  el.className = 'card recap-check';
+  const rows = items.map(({ card, i }) => {
+    const key = NotesCore.key(mod.id, i);
+    const checked = !!(state.recall[key] && state.recall[key].val);
+    return `<label class="rc-item${checked ? ' checked' : ''}" data-key="${key}">
+      <input type="checkbox" ${checked ? 'checked' : ''}>
+      <span class="rc-ico">${card.emoji || '•'}</span>
+      <span class="rc-body"><span class="rc-title">${card.title}</span>
+      <span class="rc-essence">${NotesCore.essenceOf(card)}</span></span></label>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="card-kicker">✅ ${mod.icon} ${mod.title} · recap</div>
+    <div class="card-title">Cosa ti ricordi?</div>
+    <div class="card-text">Spunta i concetti che padroneggi. Quelli che lasci non spuntati te li riproponiamo. 👇</div>
+    <div class="rc-list">${rows}</div>
+    <button class="btn-big rc-review-btn">Ripassa i <span class="rc-count"></span> non spuntati ⬇️</button>`;
+  const countEl = el.querySelector('.rc-count');
+  const reviewBtn = el.querySelector('.rc-review-btn');
+  const refreshCount = () => {
+    const n = NotesCore.reviewCount(mod, state.recall);
+    countEl.textContent = n;
+    reviewBtn.style.display = n === 0 ? 'none' : '';
+  };
+  el.querySelectorAll('.rc-item input').forEach(input => {
+    input.onchange = () => {
+      const key = input.closest('.rc-item').dataset.key;
+      state.recall[key] = { val: input.checked, ts: new Date().toISOString() };
+      input.closest('.rc-item').classList.toggle('checked', input.checked);
+      saveState();
+      refreshCount();
+    };
+  });
+  reviewBtn.onclick = () => openRecallReview(mod);
+  refreshCount();
+  return el;
+}
+
+function buildRecallCard(mod, card, idx) {
+  const origI = mod._idx ? mod._idx[idx] : idx;
+  const key = NotesCore.key(mod.id, origI);
+  const el = document.createElement('div');
+  el.className = 'card recall-card';
+  el.innerHTML = `
+    <div class="card-kicker">📌 ${mod.icon} ${mod.title} · ripasso</div>
+    <div class="card-emoji">${card.emoji || '🧠'}</div>
+    <div class="card-title">${card.title}</div>
+    <button class="btn-solution rc-show">Mostra</button>
+    <div class="recall-essence hidden">${NotesCore.essenceOf(card)}</div>
+    <div class="recall-actions hidden">
+      <button class="btn-solution rc-still">Ancora no</button>
+      <button class="btn-done rc-got" style="flex:1">Ora la ricordo ✓</button>
+    </div>`;
+  const essence = el.querySelector('.recall-essence');
+  const actions = el.querySelector('.recall-actions');
+  el.querySelector('.rc-show').onclick = (e) => {
+    e.target.classList.add('hidden');
+    essence.classList.remove('hidden');
+    actions.classList.remove('hidden');
+  };
+  el.querySelector('.rc-got').onclick = () => {
+    state.recall[key] = { val: true, ts: new Date().toISOString() };
+    saveState();
+    el.classList.add('recall-done');
+    cardsEl.scrollTo({ top: (Array.prototype.indexOf.call(cardsEl.children, el) + 1) * cardsEl.clientHeight, behavior: 'smooth' });
+  };
+  el.querySelector('.rc-still').onclick = () => {
+    const finale = cardsEl.querySelector('.card.finale');
+    cardsEl.insertBefore(el, finale);   // "va in fondo": prima della finale
+    cardsEl.scrollTo({ top: cardsEl.scrollTop + cardsEl.clientHeight, behavior: 'smooth' });
+  };
   return el;
 }
 
@@ -1102,6 +1289,13 @@ function logoutProfilo() {
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 $('btnExit').onclick = exitFeed;
+$('btnNotesHub').onclick = openNotesHub;
+$('btnNotesHubClose').onclick = () => $('notes-hub').classList.add('hidden');
+$('noteSheetCancel').onclick = () => $('note-sheet').classList.add('hidden');
+$('notePin').onclick = () => {
+  const ctx = noteCtx();
+  if (ctx) openNoteSheet(ctx.modId, ctx.i, ctx.card);
+};
 initTheme();
 setupSearch();
 renderHome();
