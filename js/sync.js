@@ -25,6 +25,20 @@
       : { state: local ? local.state : null, updatedAt: local ? local.updatedAt : null, source: 'local' };
   }
 
+  function mergeByTimestamp(a, b) {
+    a = a || {}; b = b || {};
+    const out = {};
+    for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {
+      const x = a[k], y = b[k];
+      if (!x) { out[k] = y; continue; }
+      if (!y) { out[k] = x; continue; }
+      const xt = Date.parse(x.ts || '') || -Infinity;
+      const yt = Date.parse(y.ts || '') || -Infinity;
+      out[k] = yt > xt ? y : x;
+    }
+    return out;
+  }
+
   function mergeModules(a, b) {
     a = a || {}; b = b || {};
     const out = {};
@@ -52,6 +66,8 @@
       lastDay: (a.lastDay || '') >= (b.lastDay || '') ? (a.lastDay || null) : (b.lastDay || null),
       seen: { ...(b.seen || {}), ...(a.seen || {}) },
       wrong: { ...(b.wrong || {}), ...(a.wrong || {}) },
+      notes: mergeByTimestamp(a.notes, b.notes),
+      recall: mergeByTimestamp(a.recall, b.recall),
       modules: mergeModules(a.modules, b.modules),
     };
   }
@@ -127,7 +143,7 @@
   }
 
   const Sync = {
-    normalizeId, validateCredentials, pickNewest, mergeStates, mergeModules,
+    normalizeId, validateCredentials, pickNewest, mergeByTimestamp, mergeStates, mergeModules,
     init(client) { _client = client; },
     get _client() { return _client; },
     activeProfile, logout, login, pull, push, saveNow,
@@ -135,7 +151,7 @@
 
   global.Sync = Sync;
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { normalizeId, validateCredentials, pickNewest, mergeStates, mergeModules, Sync };
+    module.exports = { normalizeId, validateCredentials, pickNewest, mergeByTimestamp, mergeStates, mergeModules, Sync };
   }
 
 })(typeof window !== 'undefined' ? window : globalThis);
