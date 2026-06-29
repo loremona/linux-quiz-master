@@ -259,6 +259,7 @@ function renderHome() {
     const hasCS = typeof CHEATSHEETS !== 'undefined' && !!CHEATSHEETS[mod.id];
     const flashCount = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact').length;
     const drillCount = mod.cards.filter(c => c.type === 'quiz' || c.type === 'input').length;
+    const toReview = prog.done ? NotesCore.reviewCount(mod, state.recall) : 0;
     el.innerHTML = `
       <div class="module-icon">${mod.icon}</div>
       <div class="module-meta">
@@ -271,6 +272,7 @@ function renderHome() {
         ${!locked && flashCount > 0 ? `<button class="btn-cheatsheet" data-action="flash">📖 flash</button>` : ''}
         ${!locked && drillCount > 0 ? `<button class="btn-cheatsheet" data-action="drill">🎯 quiz</button>` : ''}
         ${hasCS && !locked ? `<button class="btn-cheatsheet" data-action="cheat">📄 cheat</button>` : ''}
+        ${toReview > 0 ? `<button class="btn-cheatsheet btn-review" data-action="recall">📌 ${toReview} ripasso</button>` : ''}
       </div>`;
     if (!locked) {
       el.onclick = () => openModule(mod);
@@ -281,6 +283,7 @@ function renderHome() {
           if (action === 'flash') openFlash(mod);
           else if (action === 'drill') openQuizDrill(mod);
           else if (action === 'cheat') openCheatsheet(mod);
+          else if (action === 'recall') openRecallReview(mod);
         });
       });
     }

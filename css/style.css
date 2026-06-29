@@ -520,6 +520,8 @@ body.light-theme .stats-mod-bar { background: #d8daf0; }
   transition: background .15s;
 }
 .btn-cheatsheet:hover { background: rgba(124,92,255,.3); }
+.btn-review { border-color: var(--gold) !important; color: var(--gold) !important; background: rgba(255,200,61,.12); }
+.btn-review:hover { background: rgba(255,200,61,.24); }
 
 /* ═══════════ Cheatsheet modale ═══════════ */
 #cheatsheet-overlay {
