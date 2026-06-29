@@ -12,6 +12,8 @@ const defaultState = () => ({
   modules: {},   // id -> { card: ultimaCardVista, done: bool, quizOk: n, quizTot: n }
   seen: {},      // "modId:cardIdx" -> true (XP già assegnata)
   wrong: {},     // "modId:cardIdx" -> true (quiz sbagliati al primo tentativo)
+  notes: {},     // "modId:cardIdx" -> { text, title, ts }
+  recall: {},    // "modId:cardIdx" -> { val, ts }  (concetto "lo ricordo")
 });
 
 let state = loadState();
