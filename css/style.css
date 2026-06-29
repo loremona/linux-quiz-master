@@ -490,6 +490,19 @@ body.light-theme .stats-mod-bar { background: #d8daf0; }
   scrollbar-width: thin; scrollbar-color: #2a3160 transparent;
 }
 
+.note-pin {
+  position: fixed; right: 16px;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  width: 50px; height: 50px; border-radius: 50%;
+  background: rgba(255,255,255,.08); border: 1px solid #3a4070;
+  color: var(--text); font-size: 1.35rem; cursor: pointer; z-index: 16;
+  display: none; align-items: center; justify-content: center;
+  transition: transform .12s, background .15s;
+}
+.note-pin.visible { display: flex; }
+.note-pin:active { transform: scale(.9); }
+.note-pin.has-note { background: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 4px rgba(124,92,255,.18); }
+
 @media (min-width: 700px) {
   #home, .card { max-width: 520px; margin-left: auto; margin-right: auto; }
   .feed-topbar { max-width: 520px; left: 50%; transform: translateX(-50%); }
