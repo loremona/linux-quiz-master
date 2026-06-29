@@ -367,6 +367,8 @@ function openQuizDrill(mod) {
   renderFeedXp();
 }
 
+function openRecallReview(mod) { console.log('TODO ripasso', NotesCore.reviewCount(mod, state.recall)); }
+
 function exitFeed() {
   if (examTimerInterval) { clearInterval(examTimerInterval); examTimerInterval = null; }
   reviewMode = false;
@@ -405,6 +407,10 @@ function renderCards(mod) {
   }
   mod.cards.forEach((c, i) => cardsEl.appendChild(buildCard(mod, c, i)));
   cardsEl.appendChild(examMode ? buildExamFinale() : buildFinale(mod));
+  if (!reviewMode && !examMode && !flashMode && !quizDrillMode && !recallMode) {
+    const rc = buildRecapChecklist(mod);
+    if (rc) cardsEl.appendChild(rc);
+  }
   cardsEl.onscroll = onFeedScroll;
   updateFeedProgress(0);
   refreshPin();
@@ -878,6 +884,47 @@ function buildFinale(mod) {
       confetti(220);
     }
   }, { root: cardsEl, threshold: .6 }).observe(el);
+  return el;
+}
+
+function buildRecapChecklist(mod) {
+  const items = NotesCore.concepts(mod);
+  if (items.length < 2) return null;
+  const el = document.createElement('div');
+  el.className = 'card recap-check';
+  const rows = items.map(({ card, i }) => {
+    const key = NotesCore.key(mod.id, i);
+    const checked = !!(state.recall[key] && state.recall[key].val);
+    return `<label class="rc-item${checked ? ' checked' : ''}" data-key="${key}">
+      <input type="checkbox" ${checked ? 'checked' : ''}>
+      <span class="rc-ico">${card.emoji || '•'}</span>
+      <span class="rc-body"><span class="rc-title">${card.title}</span>
+      <span class="rc-essence">${NotesCore.essenceOf(card)}</span></span></label>`;
+  }).join('');
+  el.innerHTML = `
+    <div class="card-kicker">✅ ${mod.icon} ${mod.title} · recap</div>
+    <div class="card-title">Cosa ti ricordi?</div>
+    <div class="card-text">Spunta i concetti che padroneggi. Quelli che lasci non spuntati te li riproponiamo. 👇</div>
+    <div class="rc-list">${rows}</div>
+    <button class="btn-big rc-review-btn">Ripassa i <span class="rc-count"></span> non spuntati ⬇️</button>`;
+  const countEl = el.querySelector('.rc-count');
+  const reviewBtn = el.querySelector('.rc-review-btn');
+  const refreshCount = () => {
+    const n = NotesCore.reviewCount(mod, state.recall);
+    countEl.textContent = n;
+    reviewBtn.style.display = n === 0 ? 'none' : '';
+  };
+  el.querySelectorAll('.rc-item input').forEach(input => {
+    input.onchange = () => {
+      const key = input.closest('.rc-item').dataset.key;
+      state.recall[key] = { val: input.checked, ts: new Date().toISOString() };
+      input.closest('.rc-item').classList.toggle('checked', input.checked);
+      saveState();
+      refreshCount();
+    };
+  });
+  reviewBtn.onclick = () => openRecallReview(mod);
+  refreshCount();
   return el;
 }
 
