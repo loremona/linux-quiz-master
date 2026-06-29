@@ -299,6 +299,7 @@ let examTimerSec = 0;
 let examTimerInterval = null;
 let flashMode = false;
 let quizDrillMode = false;
+let recallMode = false;
 let feedOffset = 0;   // n. di card sintetiche prima delle card reali (es. ripasso lampo)
 
 function openModule(mod) {
@@ -406,6 +407,7 @@ function renderCards(mod) {
   cardsEl.appendChild(examMode ? buildExamFinale() : buildFinale(mod));
   cardsEl.onscroll = onFeedScroll;
   updateFeedProgress(0);
+  refreshPin();
 }
 
 // ── Ripasso lampo ⚡ ──────────────────────────────────────────────────────────
@@ -443,6 +445,26 @@ function cardIndex() {
   return Math.round(cardsEl.scrollTop / cardsEl.clientHeight);
 }
 
+function noteCtx() {
+  if (reviewMode || examMode || flashMode || quizDrillMode || recallMode) return null;
+  if (!curMod) return null;
+  const realIdx = cardIndex() - feedOffset;
+  const card = curMod.cards[realIdx];
+  if (realIdx < 0 || !card) return null;
+  return { modId: curMod.id, i: realIdx, card };
+}
+
+function refreshPin() {
+  const pin = $('notePin');
+  const ctx = noteCtx();
+  if (!ctx) { pin.classList.remove('visible', 'has-note'); return; }
+  pin.classList.add('visible');
+  const note = state.notes[NotesCore.key(ctx.modId, ctx.i)];
+  pin.classList.toggle('has-note', !!(note && note.text));
+}
+
+function openNoteSheet(modId, i, card) { console.log('TODO sheet', modId, i, card.title); }
+
 let scrollT = null;
 function onFeedScroll() {
   clearTimeout(scrollT);
@@ -462,6 +484,7 @@ function onFeedScroll() {
       }
     }
     $('swipeHint').style.display = i === 0 ? '' : 'none';
+    refreshPin();
   }, 120);
 }
 
@@ -1104,6 +1127,10 @@ function logoutProfilo() {
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 $('btnExit').onclick = exitFeed;
+$('notePin').onclick = () => {
+  const ctx = noteCtx();
+  if (ctx) openNoteSheet(ctx.modId, ctx.i, ctx.card);
+};
 initTheme();
 setupSearch();
 renderHome();
