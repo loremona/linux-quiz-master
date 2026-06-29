@@ -177,6 +177,24 @@ test('mergeStates con stato vuoto NON azzera l altro (anti data-loss)', () => {
   eq(m.modules.m01.quizOk, 2);
 });
 
+test('mergeByTimestamp: chiave da un solo lato sopravvive', () => {
+  const out = Sync.mergeByTimestamp({ 'm01:1': { text: 'a', ts: '2026-01-01' } }, {});
+  deepEq(out, { 'm01:1': { text: 'a', ts: '2026-01-01' } });
+});
+test('mergeByTimestamp: vince il ts più recente', () => {
+  const a = { 'm01:1': { text: 'vecchia', ts: '2026-01-01T00:00:00Z' } };
+  const b = { 'm01:1': { text: 'nuova',   ts: '2026-02-01T00:00:00Z' } };
+  eq(Sync.mergeByTimestamp(a, b)['m01:1'].text, 'nuova');
+  eq(Sync.mergeByTimestamp(b, a)['m01:1'].text, 'nuova');
+});
+test('mergeStates: include notes e recall uniti', () => {
+  const a = { notes: { 'm01:1': { text: 'x', ts: '2026-02-01' } }, recall: {} };
+  const b = { notes: {}, recall: { 'm01:2': { val: true, ts: '2026-01-01' } } };
+  const out = Sync.mergeStates(a, b);
+  eq(out.notes['m01:1'].text, 'x');
+  eq(out.recall['m01:2'].val, true);
+});
+
 // ── Runner (await sequenziale, Promise via MainLoop) ──────────────
 const loop = GLib.MainLoop.new(null, false);
 (async () => {
