@@ -463,7 +463,60 @@ function refreshPin() {
   pin.classList.toggle('has-note', !!(note && note.text));
 }
 
-function openNoteSheet(modId, i, card) { console.log('TODO sheet', modId, i, card.title); }
+function openNoteSheet(modId, i, card) {
+  const key = NotesCore.key(modId, i);
+  const existing = state.notes[key];
+  $('noteSheetTitle').textContent = card.title || card.q || 'Nota';
+  $('noteSheetText').value = existing ? existing.text : '';
+  $('note-sheet').classList.remove('hidden');
+  $('noteSheetText').focus();
+  $('noteSheetSave').onclick = () => {
+    saveNote(modId, i, card.title || card.q || '', $('noteSheetText').value.trim());
+    $('note-sheet').classList.add('hidden');
+    refreshPin();
+  };
+}
+
+function saveNote(modId, i, title, text) {
+  state.notes[NotesCore.key(modId, i)] = { text, title, ts: new Date().toISOString() };
+  saveState();
+}
+
+function openNotesHub() {
+  const list = $('notesHubList');
+  list.innerHTML = '';
+  const byMod = {};
+  for (const [key, n] of Object.entries(state.notes)) {
+    if (!n || !n.text) continue;
+    const colon = key.lastIndexOf(':');
+    const modId = key.slice(0, colon), i = parseInt(key.slice(colon + 1), 10);
+    (byMod[modId] = byMod[modId] || []).push({ i, n });
+  }
+  const modIds = Object.keys(byMod);
+  if (!modIds.length) { list.innerHTML = `<div class="notes-hub-empty">Nessuna nota ancora. Tocca 📝 su una card per iniziare.</div>`; }
+  for (const modId of modIds) {
+    const mod = MODULES.find(m => m.id === modId);
+    const head = document.createElement('div');
+    head.className = 'notes-hub-mod';
+    head.textContent = (mod ? mod.icon + ' ' + mod.title : modId);
+    list.appendChild(head);
+    byMod[modId].sort((a, b) => a.i - b.i).forEach(({ i, n }) => {
+      const item = document.createElement('div');
+      item.className = 'notes-hub-item';
+      const cardDiv = document.createElement('div');
+      cardDiv.className = 'nh-card';
+      cardDiv.textContent = n.title || ('Card ' + i);
+      const textDiv = document.createElement('div');
+      textDiv.className = 'nh-text';
+      textDiv.textContent = n.text;
+      item.appendChild(cardDiv);
+      item.appendChild(textDiv);
+      item.onclick = () => { $('notes-hub').classList.add('hidden'); openModuleAt(modId, i); };
+      list.appendChild(item);
+    });
+  }
+  $('notes-hub').classList.remove('hidden');
+}
 
 let scrollT = null;
 function onFeedScroll() {
@@ -1127,6 +1180,9 @@ function logoutProfilo() {
 
 // ── Avvio ────────────────────────────────────────────────────────────────────
 $('btnExit').onclick = exitFeed;
+$('btnNotesHub').onclick = openNotesHub;
+$('btnNotesHubClose').onclick = () => $('notes-hub').classList.add('hidden');
+$('noteSheetCancel').onclick = () => $('note-sheet').classList.add('hidden');
 $('notePin').onclick = () => {
   const ctx = noteCtx();
   if (ctx) openNoteSheet(ctx.modId, ctx.i, ctx.card);
