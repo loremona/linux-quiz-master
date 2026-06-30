@@ -3,7 +3,7 @@
    Aggiorna il cache name per forzare un re-fetch. */
 'use strict';
 
-const CACHE = 'linux-dojo-sw-v12';
+const CACHE = 'linux-dojo-sw-v13';
 
 const ASSETS = [
   './',
@@ -21,14 +21,23 @@ const ASSETS = [
   './js/data/module01.js',
   './js/data/module01_quiz.js',
   './js/data/module02.js',
+  './js/data/module02_quiz.js',
   './js/data/module03.js',
+  './js/data/module03_quiz.js',
   './js/data/module04.js',
+  './js/data/module04_quiz.js',
   './js/data/module05.js',
+  './js/data/module05_quiz.js',
   './js/data/module06.js',
+  './js/data/module06_quiz.js',
   './js/data/module07.js',
+  './js/data/module07_quiz.js',
   './js/data/module08.js',
+  './js/data/module08_quiz.js',
   './js/data/module09.js',
+  './js/data/module09_quiz.js',
   './js/data/module10.js',
+  './js/data/module10_quiz.js',
 ];
 
 // Installa e pre-cacha tutti gli asset
