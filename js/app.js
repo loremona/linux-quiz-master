@@ -97,6 +97,15 @@ const DAILY  = [
   'Ricorda: anche Linus Torvalds è partito da `ls`. 🚶',
 ];
 const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+// Copia mescolata (Fisher-Yates), senza mutare l'originale.
+const shuffled = arr => {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+};
 
 // ── DOM refs ─────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
@@ -617,24 +626,29 @@ function buildCard(mod, c, i) {
     };
   }
   else if (c.type === 'quiz') {
+    // Mescola le opzioni a ogni render: clone con opts rimescolate e 'a' rimappato
+    // alla nuova posizione corretta. Le funzioni di risposta restano invariate
+    // perché confrontano sempre chosen === qc.a sulla posizione mostrata.
+    const order = shuffled([...c.opts.keys()]);
+    const qc = { ...c, opts: order.map(k => c.opts[k]), a: order.indexOf(c.a) };
     el.innerHTML = `${kicker}
       <div class="card-emoji">❓</div>
-      <div class="card-title">${c.q}</div>
+      <div class="card-title">${qc.q}</div>
       <div class="quiz-options"></div>
       <div class="quiz-zone"></div>`;
     const box = el.querySelector('.quiz-options');
     const zone = el.querySelector('.quiz-zone');
-    c.opts.forEach((opt, oi) => {
+    qc.opts.forEach((opt, oi) => {
       const b = document.createElement('button');
       b.className = 'quiz-opt';
       b.textContent = opt;
       b.onclick = examMode
-        ? () => answerExamQuiz(i, c, oi, box, zone)
+        ? () => answerExamQuiz(i, qc, oi, box, zone)
         : reviewMode
-          ? () => answerReviewQuiz(i, c, oi, box, zone)
+          ? () => answerReviewQuiz(i, qc, oi, box, zone)
           : quizDrillMode
-            ? () => answerDrillQuiz(c, oi, box, zone)
-            : () => answerQuiz(mod, c, i, oi, box, zone);
+            ? () => answerDrillQuiz(qc, oi, box, zone)
+            : () => answerQuiz(mod, qc, i, oi, box, zone);
       box.appendChild(b);
     });
   }
