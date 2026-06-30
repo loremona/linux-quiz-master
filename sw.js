@@ -3,7 +3,7 @@
    Aggiorna il cache name per forzare un re-fetch. */
 'use strict';
 
-const CACHE = 'linux-dojo-sw-v11';
+const CACHE = 'linux-dojo-sw-v12';
 
 const ASSETS = [
   './',
@@ -19,6 +19,7 @@ const ASSETS = [
   './js/modules.js',
   './js/cheatsheets.js',
   './js/data/module01.js',
+  './js/data/module01_quiz.js',
   './js/data/module02.js',
   './js/data/module03.js',
   './js/data/module04.js',
