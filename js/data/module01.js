@@ -145,6 +145,13 @@ UEFI! 😎` },
   a: 2,
   explain: `<code>enable --now</code> = enable (parte ad ogni boot) + start (parte subito) in un colpo solo. Solo <code>start</code> non sopravvive al riavvio; solo <code>enable</code> non lo avvia adesso. ⚡` },
 
+{ type: 'lesson', emoji: '🧰', title: 'systemctl: altri 3 verbi da esame',
+  text: `Oltre a start/stop/enable/disable, l'esame ama questi:<br><br>
+  🚫 <code>systemctl mask sshd</code> — collega la unit a <code>/dev/null</code>: <strong>impossibile</strong> avviarla in qualunque modo (più forte di <code>disable</code>). Si annulla con <code>unmask</code>.<br>
+  ❓ <code>systemctl is-enabled sshd</code> — dice solo se il servizio è impostato per partire al boot (stampa <code>enabled</code>/<code>disabled</code>/<code>masked</code>…)<br>
+  🔄 <code>systemctl daemon-reload</code> — ricarica la configurazione di systemd dopo che hai <strong>creato o modificato un file <code>.service</code></strong> (senza, systemd non vede le tue modifiche)`,
+  analogy: `mask = sigillare l'interruttore sotto vetro "rompere solo in emergenza". is-enabled = controllare se il timer è impostato. daemon-reload = dire al maggiordomo "ho cambiato la lista delle mansioni, rileggila". 🧰` },
+
 // ── Target / runlevel ────────────────────────────────────────────────────────
 { type: 'lesson', emoji: '🎯', title: 'Target e runlevel: gli "stati" del sistema',
   text: `Il sistema può trovarsi in diversi <strong>stati</strong>. Una volta si chiamavano <strong>runlevel</strong> (numeri), oggi systemd usa i <strong>target</strong>. L'esame vuole la tabella di conversione:<br><br>

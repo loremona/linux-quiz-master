@@ -4,7 +4,7 @@
 'use strict';
 
 const MODULES = [
-  { id: 'm01', icon: '🧠', title: 'Com\'è fatto Linux',      sub: 'Kernel, boot, systemd, processi',      cards: (typeof MODULE01 !== 'undefined') ? MODULE01 : [] },
+  { id: 'm01', icon: '🧠', title: 'Com\'è fatto Linux',      sub: 'Kernel, boot, systemd, processi',      cards: (typeof MODULE01 !== 'undefined') ? MODULE01 : [], extra: (typeof MODULE01_QUIZ !== 'undefined') ? MODULE01_QUIZ : [] },
   { id: 'm02', icon: '📦', title: 'Pacchetti & installazione', sub: 'pacman, AUR, apt, dnf, GRUB',         cards: (typeof MODULE02 !== 'undefined') ? MODULE02 : [] },
   { id: 'm03', icon: '⌨️', title: 'Comandi GNU & Unix',      sub: 'File, pipe, grep, regex, vi',          cards: (typeof MODULE03 !== 'undefined') ? MODULE03 : [] },
   { id: 'm04', icon: '💾', title: 'Dischi & filesystem',     sub: 'Partizioni, mount, permessi, FHS',     cards: (typeof MODULE04 !== 'undefined') ? MODULE04 : [] },
