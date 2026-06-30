@@ -267,7 +267,7 @@ function renderHome() {
     el.className = 'module-card' + (prog.done ? ' done' : '') + (locked ? ' locked' : '');
     const hasCS = typeof CHEATSHEETS !== 'undefined' && !!CHEATSHEETS[mod.id];
     const flashCount = mod.cards.filter(c => c.type === 'lesson' || c.type === 'fact').length;
-    const drillCount = mod.cards.filter(c => c.type === 'quiz' || c.type === 'input').length;
+    const drillCount = QuizCore.drillCount(mod);
     const toReview = prog.done ? NotesCore.reviewCount(mod, state.recall) : 0;
     el.innerHTML = `
       <div class="module-icon">${mod.icon}</div>
@@ -368,7 +368,7 @@ function openFlash(mod) {
 }
 
 function openQuizDrill(mod) {
-  const drillCards = mod.cards.filter(c => c.type === 'quiz' || c.type === 'input');
+  const drillCards = QuizCore.quizPool(mod);
   if (!drillCards.length) return;
   curMod = { ...mod, cards: drillCards };
   reviewMode = false; examMode = false; flashMode = false; quizDrillMode = true; recallMode = false;
@@ -1016,9 +1016,8 @@ function startExamAll() { startExamWith(MODULES, 'Esame Completo', EXAM_COUNT); 
 function startExamWith(mods, label, count) {
   const pool = [];
   for (const mod of mods) {
-    mod.cards.forEach((card, idx) => {
-      if (card.type === 'quiz' || card.type === 'input')
-        pool.push({ card, modId: mod.id, origIdx: idx });
+    QuizCore.quizPool(mod).forEach((card, idx) => {
+      pool.push({ card, modId: mod.id, origIdx: idx });
     });
   }
   for (let i = pool.length - 1; i > 0; i--) {
