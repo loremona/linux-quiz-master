@@ -22,6 +22,8 @@ Il progetto vive ormai nel suo repo dedicato **`loremona/linux-quiz-master`** (p
 3. Dal telefono: menu del browser → **"Aggiungi a schermata Home"**
 
 I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
+In più c'è il **profilo cloud opzionale** (👤 Accedi in home): nome + codice, senza password,
+e i progressi si sincronizzano su Supabase tra PC e telefono (merge locale+remoto, mai last-write-wins).
 
 ---
 
@@ -44,21 +46,29 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 | **CP12** | Migrazione in repo dedicato `linux-quiz-master` + GitHub Pages | ✅ Fatto (anticipato) |
 | **CP13** | Statistiche dettagliate · Flashcard mode · Esami 101/102 separati · Tema chiaro/scuro | ✅ Fatto |
 | **CP14** | Ricerca globale tra le card · Quiz Drill mode per modulo (solo quiz, senza XP) | ✅ Fatto |
+| **CP15** | Note contestuali (📝 pin su ogni card + hub note) · Ripasso attivo di fine modulo (checklist + deck mirato + badge "da ripassare") | ✅ Fatto |
+| **CP16** | Login profilo cloud: nome+codice, sync progressi su Supabase, local-first con merge anti data-loss (`js/sync.js`, test gjs) | ✅ Fatto |
+| **CP17** | Banca domande extra: `js/data/moduleNN_quiz.js` per tutti i 10 moduli — alimentano drill+esami ma non il feed. **Pool totale: 387 domande** (214 inline + 173 extra) via `js/quiz-core.js` | ✅ Fatto |
 
 ### I 10 moduli (= programma d'esame LPIC-1 completo)
 
-| # | Modulo | Obiettivi LPI coperti | Stato |
-|---|--------|----------------------|-------|
-| 1 | 🧠 Com'è fatto Linux | 101.1, 101.2, 101.3 | ✅ 36 card, 13 quiz (di cui 1 `input`, 2 missioni) |
-| 2 | 📦 Pacchetti & installazione | 102.1–102.6 (+ pacman/AUR extra) | ✅ 32 card, 12 quiz (di cui 1 `input`, 2 missioni) |
-| 3 | ⌨️ Comandi GNU & Unix | 103.1–103.8 (cd/ls/cp, pipe, redirect, grep, regex, sort/cut/wc/tr, ps/kill/nice, vi) | ✅ 35 card, 15 quiz (di cui 4 `input`) |
-| 4 | 💾 Dischi & filesystem | 104.1–104.7 (mkfs, fsck, mount/umount, df/du, permessi, chmod/chown, link, FHS, find/locate) | ✅ 41 card, 12 quiz (di cui 1 `input`, 3 missioni) |
-| 5 | 🐚 Shell & scripting | 105.1, 105.2 (variabili, PATH, alias, .bashrc, script, if/for/while, test) | ✅ 40 card, 13 quiz (di cui 1 `input`, 3 missioni) |
-| 6 | 🖥️ Interfacce grafiche | 106.1–106.3 (X11, Wayland, display manager, accessibilità: sticky/slow/bounce/mouse keys, contrasto, Orca, braille) | ✅ 27 card, 10 quiz (di cui 1 `input`, 1 missione) |
-| 7 | 👥 Amministrazione | 107.1–107.3 (useradd/usermod, /etc/passwd /shadow /group, cron, at, systemd timer, locale) | ✅ 36 card, 13 quiz (di cui 2 `input`, 3 missioni) |
-| 8 | ⚙️ Servizi di sistema | 108.1–108.4 (date/timedatectl/NTP/chrony/SNTP, fuso orario, journald/rsyslog, MTA/mail/MUA, CUPS lpr/IPP 631) | ✅ 45 card, 16 quiz (di cui 1 `input`, 3 missioni) |
-| 9 | 🌐 Networking | 109.1–109.4 (IP/CIDR, TCP/UDP/ICMP, porte note, naming interfacce, ip/ss/ping/traceroute, net-tools↔iproute2, /etc/network/interfaces, DNS) | ✅ 51 card, 17 quiz (di cui 1 `input`, 3 missioni) |
-| 10 | 🔐 Sicurezza | 110.1–110.3 (sudo/su, SUID/SGID, ulimit, ssh + chiavi, gpg, last/who/w) | ✅ 37 card, 14 quiz (di cui 2 `input`, 3 missioni) |
+Conteggi reali al 2026-07-02. "Quiz feed" = domande `quiz`+`input` dentro le lezioni;
+"extra" = banca `moduleNN_quiz.js` che alimenta solo drill ed esami.
+
+| # | Modulo | Obiettivi LPI coperti | Card | Quiz feed | Extra |
+|---|--------|----------------------|------|-----------|-------|
+| 1 | 🧠 Com'è fatto Linux | 101.1, 101.2, 101.3 | 58 | 22 (1 `input`) + 2 missioni | 24 |
+| 2 | 📦 Pacchetti & installazione | 102.1–102.6 (+ pacman/AUR extra) | 53 | 22 (1 `input`) + 2 missioni | 16 |
+| 3 | ⌨️ Comandi GNU & Unix | 103.1–103.8 (cd/ls/cp, pipe, redirect, grep, regex, sort/cut/wc/tr, ps/kill/nice, vi) | 73 | 34 (4 `input`) | 18 |
+| 4 | 💾 Dischi & filesystem | 104.1–104.7 (mkfs, fsck, mount/umount, df/du, permessi, chmod/chown, link, FHS, find/locate) | 64 | 28 (2 `input`) + 3 missioni | 16 |
+| 5 | 🐚 Shell & scripting | 105.1, 105.2 (variabili, PATH, alias, .bashrc, script, if/for/while, test) | 53 | 19 (1 `input`) + 3 missioni | 16 |
+| 6 | 🖥️ Interfacce grafiche | 106.1–106.3 (X11, Wayland, display manager, accessibilità: sticky/slow/bounce/mouse keys, contrasto, Orca, braille) | 27 | 11 (1 `input`) + 1 missione | 15 |
+| 7 | 👥 Amministrazione | 107.1–107.3 (useradd/usermod, /etc/passwd /shadow /group, cron, at, systemd timer, locale) | 51 | 20 (2 `input`) + 3 missioni | 16 |
+| 8 | ⚙️ Servizi di sistema | 108.1–108.4 (date/timedatectl/NTP/chrony/SNTP, fuso orario, journald/rsyslog, MTA/mail/MUA, CUPS lpr/IPP 631) | 45 | 17 (1 `input`) + 3 missioni | 16 |
+| 9 | 🌐 Networking | 109.1–109.4 (IP/CIDR, TCP/UDP/ICMP, porte note, naming interfacce, ip/ss/ping/traceroute, net-tools↔iproute2, /etc/network/interfaces, DNS) | 51 | 18 (1 `input`) + 3 missioni | 17 |
+| 10 | 🔐 Sicurezza | 110.1–110.3 (sudo/su, SUID/SGID, ulimit, ssh + chiavi, gpg, last/who/w) | 57 | 23 (2 `input`) + 3 missioni | 19 |
+
+**Totale pool drill/esami: 387 domande** (214 nel feed + 173 extra).
 
 ---
 
@@ -76,9 +86,16 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 (root del repo)
 ├── index.html        # SPA: home + feed. I moduli si caricano con <script> in fondo
 ├── css/style.css     # Tema scuro neon. Variabili CSS in :root
+├── sw.js             # Service worker cache-first. BUMPA `CACHE` a ogni modifica di file!
 ├── js/app.js         # Motore: stato/localStorage, XP/livelli, feed, builder card, confetti
-├── js/modules.js     # Registro MODULES: già pronto per MODULE01..MODULE10
-└── js/data/moduleNN.js  # Un file per modulo: const MODULENN = [ ...card ]
+├── js/modules.js     # Registro MODULES: aggancia MODULE01..MODULE10 + banche extra
+├── js/quiz-core.js       # UMD puro: quizPool/drillCount (pool inline+extra per drill/esami)
+├── js/notes-core.js      # UMD puro: note contestuali + concetti da ripassare
+├── js/sync.js            # UMD puro: profilo cloud Supabase, mergeStates anti data-loss
+├── js/config.js          # URL + chiave publishable Supabase (pubblica by design, RLS attiva)
+├── js/data/moduleNN.js       # Un file per modulo: const MODULENN = [ ...card ]
+├── js/data/moduleNN_quiz.js  # Banca extra: const MODULENN_QUIZ = [ ...quiz ] (solo drill/esami)
+└── test/             # Test dei moduli puri, girano con gjs: `gjs test/sync-test.js` ecc.
 ```
 
 ### Come si aggiunge un modulo (3 passi)
@@ -163,7 +180,7 @@ I progressi (XP, streak, moduli, quiz) si salvano in localStorage.
 
 Il progetto è stato migrato da `aws-quiz-master` (branch `claude/aws-quiz-master-mobile-yqibg2`,
 cartella `linux-dojo/`) alla **root** di questo repo dedicato il 2026-06-12.
-Resta solo da attivare GitHub Pages (una tantum): **Settings → Pages → main → / (root)**.
+GitHub Pages è **attiva**: l'app è live su https://loremona.github.io/linux-quiz-master/ a ogni push su `main`.
 
 ---
 
