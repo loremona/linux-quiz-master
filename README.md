@@ -93,6 +93,7 @@ Conteggi reali al 2026-07-02. "Quiz feed" = domande `quiz`+`input` dentro le lez
 ├── js/notes-core.js      # UMD puro: note contestuali + concetti da ripassare
 ├── js/sync.js            # UMD puro: profilo cloud Supabase, mergeStates anti data-loss
 ├── js/config.js          # URL + chiave publishable Supabase (pubblica by design, RLS attiva)
+├── js/vendor/supabase.min.js # supabase-js v2.108.2 self-hostato (offline totale, no CDN)
 ├── js/data/moduleNN.js       # Un file per modulo: const MODULENN = [ ...card ]
 ├── js/data/moduleNN_quiz.js  # Banca extra: const MODULENN_QUIZ = [ ...quiz ] (solo drill/esami)
 └── test/             # Test dei moduli puri, girano con gjs: `gjs test/sync-test.js` ecc.

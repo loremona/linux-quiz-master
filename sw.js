@@ -1,9 +1,10 @@
 /* ═══════════ LINUX DOJO — Service Worker ═══════════
-   Strategia: cache-first per tutti gli asset statici.
-   Aggiorna il cache name per forzare un re-fetch. */
+   Strategia: network-first per la pagina (index.html),
+   cache-first per tutti gli altri asset statici.
+   Aggiorna il cache name per forzare un re-fetch degli asset. */
 'use strict';
 
-const CACHE = 'linux-dojo-sw-v13';
+const CACHE = 'linux-dojo-sw-v14';
 
 const ASSETS = [
   './',
@@ -11,6 +12,7 @@ const ASSETS = [
   './manifest.webmanifest',
   './icons/icon.svg',
   './css/style.css',
+  './js/vendor/supabase.min.js',
   './js/config.js',
   './js/notes-core.js',
   './js/quiz-core.js',
@@ -60,11 +62,29 @@ self.addEventListener('activate', e => {
   );
 });
 
-// Fetch: cache-first, fallback network
+// Fetch: network-first per la pagina, cache-first per il resto
 self.addEventListener('fetch', e => {
   // Ignora richieste non-GET e schemi non-http
   if (e.request.method !== 'GET') return;
   if (!e.request.url.startsWith('http')) return;
+
+  // La pagina va sempre tentata dalla rete: un deploy nuovo arriva subito
+  // anche senza bump di CACHE (il bump resta necessario per gli asset JS/CSS)
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(CACHE).then(cache => cache.put(e.request, clone));
+          return response;
+        })
+        .catch(() =>
+          caches.match(e.request)
+            .then(cached => cached || caches.match('./index.html'))
+        )
+    );
+    return;
+  }
 
   e.respondWith(
     caches.match(e.request).then(cached => {

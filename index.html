@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#0b0e1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -146,11 +146,10 @@
 <script src="js/data/module10_quiz.js"></script>
 <script src="js/cheatsheets.js"></script>
 <script src="js/modules.js"></script>
-<!-- Supabase (sync profilo). Versione pinnata + SRI: se cambi versione, rigenera l'hash con:
-       curl -s https://cdn.jsdelivr.net/npm/@supabase/supabase-js@<VERSIONE>/dist/umd/supabase.min.js | openssl dgst -sha384 -binary | openssl base64 -A -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.108.2/dist/umd/supabase.min.js"
-        integrity="sha384-JWEyvHh+lRf0sN/WWY+QTQwX+CyWqmNg4tkc8GQzAMEtR2wGNrCJlvnu1lHD1kDm"
-        crossorigin="anonymous"></script>
+<!-- Supabase (sync profilo) self-hostato per l'offline totale: v2.108.2, hash sha384 verificato
+       contro il CDN al download (2026-07-02). Per aggiornare la versione:
+       curl -sL https://cdn.jsdelivr.net/npm/@supabase/supabase-js@<VERSIONE>/dist/umd/supabase.min.js -o js/vendor/supabase.min.js -->
+<script src="js/vendor/supabase.min.js"></script>
 <script src="js/config.js"></script>
 <script src="js/sync.js"></script>
 <script src="js/notes-core.js"></script>
