@@ -53,6 +53,10 @@ I progressi restano nel browser (localStorage). Se vuoi usarla su più dispositi
 home fai *Accedi* con un nome e un codice: i progressi si sincronizzano su Supabase e
 vengono uniti a quelli locali, quindi non si perde niente.
 
+Il collegamento a Supabase c'è, ma l'app la uso solo io, quindi non mi interessa tenerlo
+sempre attivo. Se il progetto Supabase va in pausa l'app funziona lo stesso: i progressi
+restano salvati nel browser.
+
 ---
 
 ## Com'è fatto
@@ -106,3 +110,10 @@ Ogni modulo è un array di card. I tipi sono questi:
 - I comandi sempre scritti esatti: all'esame chiedono la sintassi precisa.
 - Nei quiz le risposte sbagliate devono sembrare credibili, e la spiegazione dice perché
   sono sbagliate.
+
+---
+
+## Crediti
+
+È un progetto di studio, quindi per fare prima e tenere le cose semplici mi sono fatto
+aiutare da Claude per la revisione e la correzione dei contenuti e del codice.
